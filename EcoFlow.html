@@ -1,0 +1,2400 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-lang-key="app_title">EcoFlow – Trao đổi, Tái chế, Kiếm thưởng</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter for a clean look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fee2e2; /* Light red background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #app-container {
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%; /* Always take full width up to max */
+            max-width: 480px; /* Default max width for mobile-like feel */
+            min-height: 700px; /* Minimum height to ensure content fits */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Hide overflow for rounded corners */
+        }
+
+        /* Responsive scaling for larger screens */
+        @media (min-width: 768px) { /* md breakpoint */
+            #app-container {
+                max-width: 600px; /* Allow wider on tablets */
+            }
+        }
+        @media (min-width: 1024px) { /* lg breakpoint */
+            #app-container {
+                max-width: 700px; /* Allow even wider on desktops */
+            }
+        }
+
+        .section-content {
+            flex-grow: 1;
+            padding: 24px;
+            overflow-y: auto; /* Enable scrolling for content */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            /* Animation properties */
+            opacity: 0;
+            transform: translateX(100%); /* Start off-screen to the right */
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            position: absolute; /* Position absolutely to stack sections for animation */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .section-content.active {
+            opacity: 1;
+            transform: translateX(0); /* Slide into view */
+            position: relative; /* Take up space when active */
+        }
+        .section-content.hidden {
+            display: none !important; /* Completely hide when not active and not animating */
+        }
+        .section-content.leaving {
+            opacity: 0;
+            transform: translateX(-100%); /* Slide out to the left */
+        }
+
+        /* Custom styles for better button appearance */
+        .btn-primary {
+            background-color: #ef4444; /* Red 500 */
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+        }
+        .btn-primary:hover {
+            background-color: #dc2626; /* Red 600 */
+            transform: translateY(-1px);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        }
+        .btn-secondary {
+            background-color: #fee2e2; /* Red 100 */
+            color: #991b1b; /* Red 900 */
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-secondary:hover {
+            background-color: #fecaca; /* Red 200 */
+        }
+        .btn-outline {
+            background-color: transparent;
+            color: #ef4444;
+            border: 2px solid #ef4444;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+        .btn-outline:hover {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        /* Modal specific styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-buttons button {
+            margin: 8px;
+            width: calc(50% - 16px); /* Adjust width for two buttons per row */
+            min-width: 120px;
+        }
+        .modal-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        /* Navigation Bar Specific Styles */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around; /* Distribute space evenly */
+            align-items: center;
+            padding: 8px 0; /* Reduced vertical padding */
+            overflow-x: auto; /* Allow horizontal scrolling if buttons are too many */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            scrollbar-width: none; /* Hide scrollbar for Firefox */
+            -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
+        }
+        .bottom-nav::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome, Safari, Opera */
+        }
+        .nav-item {
+            flex-shrink: 0; /* Prevent items from shrinking too much */
+            min-width: 60px; /* Minimum width for each item */
+            padding: 6px 4px; /* Adjusted padding */
+        }
+        .nav-item span:first-child { /* Emoji icon */
+            font-size: 1.8rem; /* Size for emojis */
+            margin-bottom: 2px; /* Small margin below icon */
+            display: block; /* Ensure it takes up its own line */
+        }
+        .nav-item span:last-child { /* Text label */
+            font-size: 0.65rem; /* Even smaller text for labels */
+            line-height: 1; /* Tighter line height */
+        }
+        .badge-item { /* Badge emojis */
+            font-size: 2.5rem; /* Size for badge emojis */
+            width: 80px; /* Adjusted width for emoji badges */
+            height: 80px; /* Adjusted height for emoji badges */
+            display: flex;
+            flex-direction: column; /* Stack emoji and text */
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease-in-out; /* Smooth transition for badge color */
+            border-radius: 15px; /* Slightly less round for text */
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .badge-item span:first-child { /* Emoji */
+            margin-bottom: 5px;
+        }
+        .badge-item span:last-child { /* Text name */
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-align: center;
+            line-height: 1.2;
+        }
+        .badge-item.awarded {
+            background-color: #fecaca; /* Red 200 for awarded badges */
+            color: #991b1b; /* Darker red text */
+        }
+        .badge-item:not(.awarded) {
+            background-color: #e2e8f0; /* Gray 200 */
+            color: #4a5568; /* Gray 700 */
+        }
+
+
+        /* Sub-section specific styles for Exchange and Community tabs */
+        .sub-section { /* General class for all sub-sections */
+            flex-grow: 1;
+            padding: 24px;
+            overflow-y: auto;
+            /* Animation properties for sub-sections */
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .sub-section.active {
+            opacity: 1;
+            transform: translateX(0);
+            position: relative;
+        }
+        .sub-section.hidden {
+            display: none !important;
+        }
+        .sub-section.leaving {
+            opacity: 0;
+            transform: translateX(-100%);
+        }
+
+        /* Responsive adjustments for small screens */
+        @media (max-width: 640px) {
+            body {
+                padding: 0;
+            }
+            #app-container {
+                border-radius: 0; /* No rounded corners on small screens for full width */
+                min-height: 100vh; /* Full height on mobile */
+            }
+            .modal-content {
+                width: 95%;
+            }
+            .modal-buttons button {
+                width: 100%; /* Stack buttons on very small screens */
+                margin: 5px 0;
+            }
+            .bottom-nav {
+                justify-content: flex-start; /* Align to start if many items, allow scroll */
+                padding: 8px 10px; /* Add horizontal padding for scrollable nav */
+            }
+            .nav-item {
+                margin: 0 4px; /* Add horizontal margin between items */
+            }
+        }
+
+        /* Style for clickable emojis */
+        .emoji-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            font-size: inherit; /* Inherit font size from parent */
+            line-height: 1;
+            color: inherit; /* Inherit color from parent */
+            transition: transform 0.1s ease-in-out;
+        }
+        .emoji-button:hover {
+            transform: scale(1.1);
+        }
+        .emoji-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-red-50">
+    <div id="app-container" class="relative flex flex-col w-full h-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
+
+        <!-- Header -->
+        <header class="p-6 bg-red-600 text-white text-center rounded-t-2xl shadow-md z-10">
+            <h1 class="text-3xl font-bold" data-lang-key="app_name">EcoNet</h1>
+            <p class="text-red-100 mt-1" data-lang-key="slogan">Tái chế thông minh. Kiếm thưởng tốt hơn.</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <div id="content-area" class="flex-grow relative">
+            <!-- Sections are absolutely positioned within this div for animation -->
+
+            <!-- Home Section -->
+            <section id="home-section" class="section-content p-6 flex flex-col items-center justify-center text-center active">
+                <!-- Techcombank Advertisement -->
+                <div class="bg-red-100 p-4 rounded-xl shadow-md w-full mb-6">
+                    <h3 class="text-lg font-semibold text-red-800 mb-2" data-lang-key="ad_techcombank_title">Đối tác nổi bật: Techcombank</h3>
+                    <div class="flex items-center justify-center mb-3">
+                        <img src="https://placehold.co/60x60/f87171/ffffff?text=TCB" alt="Techcombank Logo" class="w-16 h-16 rounded-full mr-3">
+                        <p class="text-sm text-red-700" data-lang-key="ad_techcombank_text">EcoNet tự hào hợp tác với Techcombank để hỗ trợ các sáng kiến bền vững. Ngân hàng thông minh hơn, sống xanh hơn!</p>
+                    </div>
+                    <a href="https://www.techcombank.com.vn/" target="_blank" class="btn-primary text-sm inline-block" data-lang-key="ad_techcombank_cta">Tìm hiểu thêm</a>
+                </div>
+
+                <h2 class="text-2xl font-semibold text-red-800 mb-4" data-lang-key="welcome_title">Chào mừng đến với EcoNet!</h2>
+                <p class="text-gray-600 mb-6" data-lang-key="home_intro">Trung tâm của bạn để trao đổi đồ cũ, tái chế thông minh và kiếm phần thưởng.</p>
+                <div class="bg-red-100 p-6 rounded-xl shadow-inner w-full max-w-xs">
+                    <p class="text-lg font-medium text-red-700" data-lang-key="your_green_points">Điểm Xanh của bạn:</p>
+                    <p id="green-points-display" class="text-5xl font-bold text-red-800 mt-2">0</p>
+                    <p class="text-sm text-gray-500 mt-2" data-lang-key="earn_points_tagline">Kiếm điểm cho mỗi hành động xanh!</p>
+                </div>
+                <div id="badges-display" class="mt-8 w-full">
+                    <h3 class="text-xl font-semibold text-red-800 mb-4" data-lang-key="your_badges">Huy hiệu của bạn</h3>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <!-- Badges will be dynamically rendered here -->
+                    </div>
+                    <p class="text-sm text-gray-500 mt-4" data-lang-key="unlock_more_badges">Mở khóa thêm huy hiệu khi bạn tiến bộ!</p>
+                </div>
+            </section>
+
+            <!-- Exchange Section (Main Tab) -->
+            <section id="exchange-section" class="section-content p-6 hidden">
+                <h2 class="text-2xl font-semibold text-red-800 mb-6 text-center" data-lang-key="exchange_trade_items">Trao đổi & Giao dịch Vật phẩm</h2>
+
+                <!-- Exchange Sub-Nav -->
+                <div class="flex justify-center gap-2 mb-6">
+                    <button id="exchange-list-item-btn" class="btn-secondary flex-1" data-lang-key="list_item_btn">Đăng Vật phẩm</button>
+                    <button id="exchange-available-items-btn" class="btn-secondary flex-1" data-lang-key="available_items_btn">Vật phẩm Khả dụng</button>
+                </div>
+
+                <!-- Sub-section for Listing an Item (Default view) -->
+                <div id="list-item-sub-section" class="sub-section active">
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-inner">
+                        <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="list_an_item_title">Đăng một Vật phẩm</h3>
+                        <form id="item-listing-form" class="space-y-4">
+                            <div>
+                                <label for="item-name" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="item_name_label">Tên Vật phẩm</label>
+                                <input type="text" id="item-name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" data-lang-placeholder-key="item_name_placeholder" placeholder="ví dụ: Sách cũ, Áo thun" required>
+                            </div>
+                            <div>
+                                <label for="item-condition" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="condition_label">Tình trạng</label>
+                                <select id="item-condition" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                                    <option value="" data-lang-key="select_condition_option">Chọn tình trạng</option>
+                                    <option value="New" data-lang-key="condition_new">Mới (chưa sử dụng)</option>
+                                    <option value="Like New" data-lang-key="condition_like_new">Như mới</option>
+                                    <option value="Good" data-lang-key="condition_good">Tốt</option>
+                                    <option value="Fair" data-lang-key="condition_fair">Khá</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="item-type" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="listing_type_label">Loại Đăng bán</label>
+                                <select id="item-type" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                                    <option value="" data-lang-key="select_type_option">Chọn loại</option>
+                                    <option value="Give Away" data-lang-key="type_give_away">Tặng (Miễn phí)</option>
+                                    <option value="Trade" data-lang-key="type_trade">Trao đổi (Đổi hàng)</option>
+                                    <option value="Sell" data-lang-key="type_sell">Bán (Giá thấp)</option>
+                                </select>
+                            </div>
+                            <div id="item-price-group" class="hidden">
+                                <label for="item-price" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="price_label">Giá ($)</label>
+                                <input type="number" id="item-price" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" data-lang-placeholder-key="price_placeholder" placeholder="ví dụ: 10.00" step="0.01">
+                            </div>
+                            <div id="item-looking-for-group" class="hidden">
+                                <label for="item-looking-for" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="looking_for_label">Tìm kiếm (ví dụ: "vật tư nghệ thuật", "cây cảnh")</label>
+                                <input type="text" id="item-looking-for" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" data-lang-placeholder-key="looking_for_placeholder" placeholder="Bạn đang tìm kiếm gì để đổi lấy?">
+                            </div>
+                            <div>
+                                <label for="item-description" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="description_label">Mô tả</label>
+                                <textarea id="item-description" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" data-lang-placeholder-key="description_placeholder" placeholder="Mô tả vật phẩm của bạn và những gì bạn đang tìm kiếm nếu trao đổi."></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary w-full" data-lang-key="list_item_submit_btn">Đăng Vật phẩm</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Sub-section for Available Items -->
+                <div id="available-items-sub-section" class="sub-section hidden">
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-inner mb-6">
+                        <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="filter_items_title">Lọc Vật phẩm</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="filter-item-type" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="by_type_label">Theo Loại</label>
+                                <select id="filter-item-type" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                                    <option value="all" data-lang-key="all_types_option">Tất cả Loại</option>
+                                    <option value="Give Away" data-lang-key="type_give_away">Tặng</option>
+                                    <option value="Trade" data-lang-key="type_trade">Trao đổi</option>
+                                    <option value="Sell" data-lang-key="type_sell">Bán</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="filter-item-condition" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="by_condition_label">Theo Tình trạng</label>
+                                <select id="filter-item-condition" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                                    <option value="all" data-lang-key="all_conditions_option">Tất cả Tình trạng</option>
+                                    <option value="New" data-lang-key="condition_new">Mới</option>
+                                    <option value="Like New" data-lang-key="condition_like_new">Như mới</option>
+                                    <option value="Good" data-lang-key="condition_good">Tốt</option>
+                                    <option value="Fair" data-lang-key="condition_fair">Khá</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="available_items_title">Vật phẩm Khả dụng</h3>
+                        <div id="item-listings-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Item listings will be dynamically added here -->
+                            <p class="text-gray-500 text-center col-span-full" id="no-items-message" data-lang-key="no_items_message">Chưa có vật phẩm nào được đăng. Hãy là người đầu tiên!</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recycle Section (Locator & Log Activity) -->
+            <section id="recycle-section" class="section-content p-6 hidden">
+                <h2 class="text-2xl font-semibold text-red-800 mb-6 text-center" data-lang-key="recycle_earn_points_title">Tái chế & Kiếm điểm</h2>
+
+                <div class="bg-gray-50 p-6 rounded-xl shadow-inner mb-6">
+                    <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="smart_recycle_locator_title">Công cụ định vị tái chế thông minh</h3>
+                    <p class="text-gray-700 mb-4" data-lang-key="smart_recycle_locator_desc">Tìm máy tái chế và điểm thu gom đối tác gần đó bằng bản đồ hỗ trợ GPS của chúng tôi.</p>
+                    <button class="btn-primary w-full" data-lang-key="locate_recycling_points_btn">Tìm điểm tái chế</button>
+                    <p class="text-sm text-gray-500 mt-3" data-lang-key="map_placeholder">*(Chức năng bản đồ chỉ là phần giữ chỗ để minh họa)*</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="log_recycling_activity_title">Ghi lại hoạt động tái chế</h3>
+                    <form id="recycle-log-form" class="space-y-4">
+                        <div>
+                            <label for="recycle-type" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="recyclable_type_label">Loại vật liệu tái chế</label>
+                            <select id="recycle-type" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                                <option value="" data-lang-key="select_type_option">Chọn loại</option>
+                                <option value="Plastic" data-lang-key="recycle_type_plastic">Nhựa</option>
+                                <option value="Paper" data-lang-key="recycle_type_paper">Giấy</option>
+                                <option value="Glass" data-lang-key="recycle_type_glass">Thủy tinh</option>
+                                <option value="Metal" data-lang-key="recycle_type_metal">Kim loại</option>
+                                <option value="Electronics" data-lang-key="recycle_type_electronics">Thiết bị điện tử</option>
+                                <option value="Textiles" data-lang-key="recycle_type_textiles">Vải</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="recycle-quantity" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="quantity_label">Số lượng (ví dụ: vật phẩm, kg)</label>
+                            <input type="number" id="recycle-quantity" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" data-lang-placeholder-key="quantity_placeholder" placeholder="ví dụ: 5 chai, 2 kg" min="1" required>
+                        </div>
+                        <button type="submit" class="btn-primary w-full" data-lang-key="log_activity_earn_points_btn">Ghi lại hoạt động & Kiếm điểm</button>
+                    </form>
+                    <p class="text-sm text-gray-500 mt-2" data-lang-key="each_log_earns_points">*(Mỗi lần ghi lại sẽ kiếm Điểm Xanh dựa trên số lượng)*</p>
+                </div>
+            </section>
+
+            <!-- Spending Tracking Section -->
+            <section id="spending-section" class="section-content p-6 hidden">
+                <h2 class="text-2xl font-semibold text-red-800 mb-6 text-center" data-lang-key="spending_tracker_title">Theo dõi Chi tiêu</h2>
+                <div class="bg-gray-50 p-6 rounded-xl shadow-inner mb-6">
+                    <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="add_new_expense_title">Thêm Chi tiêu Mới</h3>
+                    <form id="spending-form" class="space-y-4">
+                        <div>
+                            <label for="expense-description" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="expense_description_label">Mô tả</label>
+                            <input type="text" id="expense-description" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" data-lang-placeholder-key="expense_description_placeholder" placeholder="ví dụ: Thực phẩm, Cà phê" required>
+                        </div>
+                        <div>
+                            <label for="expense-amount" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="amount_label">Số tiền ($)</label>
+                            <input type="number" id="expense-amount" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" data-lang-placeholder-key="amount_placeholder" placeholder="ví dụ: 25.50" step="0.01" required>
+                        </div>
+                        <button type="submit" class="btn-primary w-full" data-lang-key="add_expense_btn">Thêm Chi tiêu</button>
+                    </form>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="your_expenses_title">Chi tiêu của bạn</h3>
+                    <ul id="spending-list" class="space-y-3">
+                        <!-- Spending items will be dynamically added here -->
+                        <li class="text-gray-500 text-center" data-lang-key="no_expenses_message">Chưa có chi tiêu nào được thêm.</li>
+                    </ul>
+                    <div class="border-t border-gray-200 mt-6 pt-4 flex justify-between items-center">
+                        <span class="text-lg font-semibold text-gray-800" data-lang-key="total_spending_label">Tổng chi tiêu:</span>
+                        <span id="total-spending-display" class="text-lg font-bold text-red-600">$0.00</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Community Section (Main Tab) -->
+            <section id="community-section" class="section-content p-6 hidden">
+                <h2 class="text-2xl font-semibold text-red-800 mb-6 text-center" data-lang-key="community_tips_title">Cộng đồng & Mẹo</h2>
+
+                <!-- Community Sub-Nav -->
+                <div class="flex justify-center gap-2 mb-6">
+                    <button id="community-tips-btn" class="btn-secondary flex-1" data-lang-key="community_tips_btn">Mẹo cộng đồng</button>
+                    <button id="community-share-tip-btn" class="btn-secondary flex-1" data-lang-key="share_tip_btn">Chia sẻ mẹo</button>
+                    <button id="community-challenges-btn" class="btn-secondary flex-1" data-lang-key="challenges_btn">Thử thách</button>
+                </div>
+
+                <!-- Sub-section for Community Tips (Default view) -->
+                <div id="community-tips-sub-section" class="sub-section active">
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="community_tips_list_title">Mẹo cộng đồng</h3>
+                        <div id="tips-list" class="space-y-6">
+                            <!-- Tips will be dynamically added here -->
+                            <p class="text-gray-500 text-center" id="no-tips-message" data-lang-key="no_tips_message">Chưa có mẹo nào được chia sẻ. Hãy là người đầu tiên!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-section for Share Tip -->
+                <div id="share-tip-sub-section" class="sub-section hidden">
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-inner">
+                        <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="share_your_saving_tip_title">Chia sẻ mẹo tiết kiệm của bạn</h3>
+                        <form id="tip-form" class="space-y-4">
+                            <div>
+                                <label for="tip-title" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="tip_title_label">Tiêu đề mẹo</label>
+                                <input type="text" id="tip-title" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" data-lang-placeholder-key="tip_title_placeholder" placeholder="ví dụ: Giải pháp tẩy rửa tự làm" required>
+                            </div>
+                            <div>
+                                <label for="tip-content" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="your_tip_label">Mẹo của bạn</label>
+                                <textarea id="tip-content" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" data-lang-placeholder-key="your_tip_placeholder" placeholder="Mô tả mẹo tiết kiệm tuyệt vời của bạn tại đây..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary w-full" data-lang-key="share_tip_submit_btn">Chia sẻ mẹo</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Sub-section for Challenges -->
+                <div id="challenges-sub-section" class="sub-section hidden">
+                    <div class="bg-white p-6 rounded-xl shadow-md text-center">
+                        <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="join_challenges_title">Tham gia thử thách!</h3>
+                        <p class="text-gray-600 mb-4" data-lang-key="challenges_desc">Tham gia các thử thách cộng đồng để tăng Điểm Xanh và tạo ra tác động lớn hơn.</p>
+                        <button id="view-challenges-btn" class="btn-secondary mt-4" data-lang-key="view_challenges_btn">Xem thử thách</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Donate Section -->
+            <section id="donate-section" class="section-content p-6 hidden">
+                <h2 class="text-2xl font-semibold text-red-800 mb-6 text-center" data-lang-key="donate_earnings_title">Quyên góp Thu nhập của bạn</h2>
+
+                <div class="bg-red-100 p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-medium text-red-700 mb-4" data-lang-key="your_recycling_earnings_title">Thu nhập từ tái chế của bạn</h3>
+                    <p class="text-red-700 mb-4" data-lang-key="donate_earnings_desc">Chuyển đổi thu nhập tích lũy từ tái chế của bạn thành khoản đóng góp cho các mục đích môi trường hoặc xã hội. Mỗi khoản đóng góp sẽ kiếm được Điểm Xanh!</p>
+                    <p class="text-lg font-semibold text-red-800" data-lang-key="available_to_donate_label">Có sẵn để quyên góp:</p>
+                    <p id="donate-earnings-display" class="text-3xl font-bold text-red-800 mt-1">$0.00</p>
+                    <button id="open-donation-modal-btn-donate-tab" class="btn-primary w-full mt-4" data-lang-key="donate_now_btn">Quyên góp ngay bây giờ</button>
+                </div>
+
+                <div class="bg-gray-50 p-6 rounded-xl shadow-inner mt-6">
+                    <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="why_donate_title">Tại sao nên quyên góp?</h3>
+                    <p class="text-gray-700 text-sm" data-lang-key="why_donate_desc">Khoản đóng góp của bạn giúp tài trợ các sáng kiến môi trường quan trọng, hỗ trợ cộng đồng địa phương và thúc đẩy các hoạt động bền vững trên toàn thế giới. Mỗi đô la đều tạo ra sự khác biệt!</p>
+                </div>
+            </section>
+
+            <!-- Profile Section -->
+            <section id="profile-section" class="section-content p-6 hidden">
+                <h2 class="text-2xl font-semibold text-red-800 mb-6 text-center" data-lang-key="your_profile_title">Hồ sơ của bạn</h2>
+                <div class="bg-white p-6 rounded-xl shadow-md text-center mb-6">
+                    <span class="text-6xl block mx-auto mb-4 border-4 border-red-200 rounded-full w-24 h-24 flex items-center justify-center">👤</span> <!-- Emoji for profile pic -->
+                    <p class="text-xl font-bold text-red-800" data-lang-key="econet_user">Người dùng EcoNet</p>
+                    <p class="text-gray-600 mt-1" data-lang-key="member_since">Thành viên từ: Tháng 7 năm 2025</p>
+                    <div class="mt-6">
+                        <p class="text-lg font-semibold text-red-700" data-lang-key="total_green_points_profile">Tổng Điểm Xanh:</p>
+                        <p id="profile-green-points-display" class="text-4xl font-bold text-red-800">0</p>
+                    </div>
+                    <div class="mt-6">
+                        <p class="text-lg font-semibold text-red-700" data-lang-key="total_donations_profile">Tổng số tiền quyên góp:</p>
+                        <p id="total-donations-display" class="text-3xl font-bold text-red-800">0</p>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="text-xl font-semibold text-red-800 mb-3" data-lang-key="badges_earned_profile">Huy hiệu đã kiếm được</h3>
+                        <div id="profile-badges-display" class="flex flex-wrap justify-center gap-3">
+                            <!-- Badges will be dynamically rendered here -->
+                        </div>
+                    </div>
+                    <button id="edit-profile-btn" class="btn-outline mt-8 w-full" data-lang-key="edit_profile_btn">Chỉnh sửa hồ sơ</button>
+                    <button id="settings-btn" class="btn-outline mt-4 w-full" data-lang-key="settings_btn">Cài đặt</button>
+                </div>
+
+                <!-- Rewards Section within Profile -->
+                <div class="bg-red-100 p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-medium text-red-700 mb-4" data-lang-key="your_rewards_title">Phần thưởng của bạn</h3>
+                    <p class="text-red-700 mb-4" data-lang-key="convert_points_desc">Chuyển đổi Điểm Xanh của bạn thành tiền mặt thật mỗi tháng một lần!</p>
+                    <p class="text-lg font-semibold text-red-800" data-lang-key="available_money_label">Số tiền khả dụng:</p>
+                    <p id="money-earned-display" class="text-3xl font-bold text-red-800 mt-1">$0.00</p>
+                    <button id="convert-points-btn" class="btn-primary w-full mt-4" data-lang-key="convert_points_to_money_btn">Chuyển đổi Điểm Xanh thành tiền</button>
+                    <p id="conversion-status-message" class="text-sm text-gray-600 mt-2" data-lang-key="conversion_status_ready">Sẵn sàng chuyển đổi trong tháng này!</p>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="section-content p-6 hidden">
+                <h2 class="text-2xl font-semibold text-red-800 mb-6 text-center" data-lang-key="settings_page_title">Cài đặt</h2>
+
+                <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="app_preferences_title">Tùy chọn ứng dụng</h3>
+                    <p class="text-gray-700" data-lang-key="customize_experience_desc">Tùy chỉnh trải nghiệm EcoNet của bạn.</p>
+                    <div class="mt-4">
+                        <label for="language-select" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="language_select_label">Ngôn ngữ:</label>
+                        <select id="language-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                            <!-- Options populated by JS -->
+                        </select>
+                    </div>
+                    <button class="btn-outline w-full mt-4" data-lang-key="notification_settings_btn">Cài đặt thông báo (Sắp ra mắt!)</button>
+                    <button class="btn-outline w-full mt-3" data-lang-key="privacy_options_btn">Tùy chọn quyền riêng tư (Sắp ra mắt!)</button>
+                </div>
+
+                <div class="bg-gray-50 p-6 rounded-xl shadow-inner">
+                    <h3 class="text-xl font-medium text-gray-700 mb-4" data-lang-key="about_econet_title">Về EcoNet</h3>
+                    <p class="text-gray-700 text-sm" data-lang-key="version_info">Phiên bản 1.0.0</p>
+                    <p class="text-gray-700 text-sm mt-2" data-lang-key="copyright_info">© 2025 EcoNet. Bảo lưu mọi quyền.</p>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="bg-red-700 text-white p-3 bottom-nav rounded-b-2xl shadow-lg">
+            <button class="nav-item flex flex-col items-center p-2 rounded-lg transition-colors duration-200 hover:bg-red-600 focus:outline-none" data-section="home-section">
+                <span>🏠</span>
+                <span data-lang-key="nav_home">Trang chủ</span>
+            </button>
+            <button class="nav-item flex flex-col items-center p-2 rounded-lg transition-colors duration-200 hover:bg-red-600 focus:outline-none" data-section="exchange-section">
+                <span>🔄</span>
+                <span data-lang-key="nav_exchange">Trao đổi</span>
+            </button>
+            <button class="nav-item flex flex-col items-center p-2 rounded-lg transition-colors duration-200 hover:bg-red-600 focus:outline-none" data-section="recycle-section">
+                <span>♻️</span>
+                <span data-lang-key="nav_recycle">Tái chế</span>
+            </button>
+            <button class="nav-item flex flex-col items-center p-2 rounded-lg transition-colors duration-200 hover:bg-red-600 focus:outline-none" data-section="spending-section">
+                <span>💸</span>
+                <span data-lang-key="nav_spending">Chi tiêu</span>
+            </button>
+            <button class="nav-item flex flex-col items-center p-2 rounded-lg transition-colors duration-200 hover:bg-red-600 focus:outline-none" data-section="community-section">
+                <span>🤝</span>
+                <span data-lang-key="nav_community">Cộng đồng</span>
+            </button>
+            <button class="nav-item flex flex-col items-center p-2 rounded-lg transition-colors duration-200 hover:bg-red-600 focus:outline-none" data-section="donate-section">
+                <span>💚</span>
+                <span data-lang-key="nav_donate">Quyên góp</span>
+            </button>
+            <button class="nav-item flex flex-col items-center p-2 rounded-lg transition-colors duration-200 hover:bg-red-600 focus:outline-none" data-section="profile-section">
+                <span>👤</span>
+                <span data-lang-key="nav_profile">Hồ sơ</span>
+            </button>
+        </nav>
+
+        <!-- Item Detail Modal -->
+        <div id="item-detail-modal" class="modal hidden">
+            <div class="modal-content text-left">
+                <h3 id="item-detail-name" class="text-2xl font-bold text-red-700 mb-4"></h3>
+                <p class="text-gray-700 mb-2"><span class="font-semibold" data-lang-key="condition_label_modal">Tình trạng:</span> <span id="item-detail-condition"></span></p>
+                <p class="text-gray-700 mb-2"><span class="font-semibold" data-lang-key="listing_type_label_modal">Loại Đăng bán:</span> <span id="item-detail-type"></span></p>
+                <p id="item-detail-price-display" class="text-gray-700 mb-2 hidden"><span class="font-semibold" data-lang-key="price_label_modal">Giá:</span> <span id="item-detail-price"></span></p>
+                <p id="item-detail-looking-for-display" class="text-gray-700 mb-2 hidden"><span class="font-semibold" data-lang-key="looking_for_label_modal">Tìm kiếm:</span> <span id="item-detail-looking-for"></span></p>
+                <p class="text-gray-700 mb-2"><span class="font-semibold" data-lang-key="listed_on_label_modal">Đăng vào:</span> <span id="item-detail-date"></span></p>
+                <p class="text-gray-700 mt-4"><span class="font-semibold" data-lang-key="description_label_modal">Mô tả:</span> <span id="item-detail-description"></span></p>
+                <button id="buy-item-confirm-btn" class="btn-primary w-full mt-6 hidden" data-lang-key="buy_item_btn_modal">Mua Vật phẩm</button>
+                <button id="propose-trade-btn" class="btn-primary w-full mt-3 hidden" data-lang-key="propose_trade_btn_modal">Đề xuất Trao đổi</button>
+                <button class="btn-secondary w-full mt-3" onclick="document.getElementById('item-detail-modal').classList.add('hidden');" data-lang-key="close_btn_modal">Đóng</button>
+            </div>
+        </div>
+
+        <!-- Report Modal -->
+        <div id="report-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 class="text-2xl font-bold text-red-700 mb-4" data-lang-key="report_content_title">Báo cáo Nội dung</h3>
+                <p class="text-gray-700 mb-6" data-lang-key="report_reason_prompt">Vui lòng chọn lý do báo cáo nội dung này:</p>
+                <form id="report-form" class="space-y-4">
+                    <div>
+                        <input type="radio" id="report-inappropriate" name="report-reason" value="Inappropriate Content" class="mr-2" required>
+                        <label for="report-inappropriate" class="text-gray-700" data-lang-key="reason_inappropriate">Nội dung không phù hợp</label>
+                    </div>
+                    <div>
+                        <input type="radio" id="report-scam" name="report-reason" value="Scam/Fraudulent" class="mr-2">
+                        <label for="report-scam" class="text-gray-700" data-lang-key="reason_scam">Lừa đảo/Gian lận</label>
+                    </div>
+                    <div>
+                        <input type="radio" id="report-broken" name="report-reason" value="Broken/Misleading Item" class="mr-2">
+                        <label for="report-broken" class="text-gray-700" data-lang-key="reason_broken">Vật phẩm bị hỏng/Gây hiểu lầm</label>
+                    </div>
+                    <div>
+                        <input type="radio" id="report-other" name="report-reason" value="Other" class="mr-2">
+                        <label for="report-other" class="text-gray-700" data-lang-key="reason_other">Khác (vui lòng chỉ định)</label>
+                    </div>
+                    <textarea id="report-other-reason" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 hidden" rows="2" data-lang-placeholder-key="report_other_placeholder" placeholder="Vui lòng mô tả lý do của bạn..."></textarea>
+                    <input type="hidden" id="reported-content-id">
+                    <input type="hidden" id="reported-content-type">
+                    <button type="submit" class="btn-primary bg-red-500 hover:bg-red-600 w-full mt-6" data-lang-key="submit_report_btn">Gửi Báo cáo</button>
+                    <button type="button" class="btn-secondary w-full mt-3" onclick="document.getElementById('report-modal').classList.add('hidden');" data-lang-key="cancel_btn_modal">Hủy</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Monthly Donation Modal (repurposed for Recycle Earnings Donation) -->
+        <div id="donation-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 class="text-2xl font-bold text-red-700 mb-4" data-lang-key="donate_recycling_earnings_modal_title">Quyên góp Thu nhập từ Tái chế của bạn</h3>
+                <p class="text-gray-700 mb-6" data-lang-key="donate_recycling_earnings_modal_desc">Bạn có <span id="current-earnings-to-donate" class="font-bold text-red-600">$0.00</span> có sẵn từ tái chế. Bạn có muốn quyên góp số tiền này cho một tổ chức từ thiện hoặc dự án môi trường không? Bạn sẽ nhận được Điểm Xanh cho đóng góp của mình!</p>
+                <div class="modal-buttons flex justify-center space-x-4">
+                    <button id="donate-charity-btn" class="btn-primary" onclick="handleDonation('charity')" data-lang-key="donate_to_charity_btn">Quyên góp cho Từ thiện</button>
+                    <button id="donate-environmental-btn" class="btn-primary" onclick="handleDonation('environmental')" data-lang-key="donate_to_environmental_btn">Quyên góp cho Môi trường</button>
+                    <button id="donate-no-thanks-btn" class="btn-secondary mt-4 w-full" onclick="handleDonation('skip')" data-lang-key="no_thanks_btn">Không, cảm ơn</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Box (for Toast-like messages) -->
+        <div id="message-box" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg hidden z-50 transition-opacity duration-300 ease-in-out opacity-0">
+            <!-- Message will be inserted here -->
+        </div>
+
+    </div>
+
+    <script>
+        // --- Global Variables ---
+        let greenPoints = 0;
+        let totalDonations = 0; // This is the monetary value donated
+        let recyclingEarnings = 0; // Earnings from simulated recycling
+        let moneyEarned = 0; // New: Money converted from Green Points
+        let spendingRecords = []; // Stores { description, amount, date }
+        let itemListings = []; // Stores { id, name, condition, type, description, price, lookingFor, date }
+        let savingTips = []; // Stores { id, title, content, upvotes, downvotes, timestamp }
+        let lastMonthlyRefundPromptMonth = -1; // For the monthly refund prompt
+        let lastPointsConversionMonth = -1; // For monthly points to money conversion
+        let awardedBadges = {}; // Stores awarded badge IDs { "badgeId": true }
+        let votedTipsSession = []; // Stores tip IDs voted on in the current session
+        let lastItemPostDate = null; // New: To track last item post date for limits
+        let itemsPostedToday = 0; // New: To track items posted today for limits
+        let reportedContent = []; // New: Stores reported items/tips { id, type, reason, reportedAt }
+
+        // New badge-related counters - these track *actions* for specific badges
+        let itemsListedCount = 0;
+        let recycleLogsCount = 0;
+        let tipsSharedCount = 0;
+        let totalDonationsCount = 0; // Counter for number of *donations made*, not monetary value
+
+        const LOCAL_STORAGE_KEY = 'econetData'; // Updated localStorage key
+        const POINTS_PER_DONATION_DOLLAR = 10; // Points per dollar donated
+        const POINTS_PER_RECYCLE_ACTIVITY = 5; // Points per recycling activity logged
+        const POINTS_PER_ITEM_LISTED = 20; // Points for listing an item
+        const POINTS_TO_MONEY_RATE = 1000; // 1000 Green Points = $1
+        const ANIMATION_DURATION = 300; // Milliseconds for section transitions
+        const MAX_ITEMS_PER_DAY = 3; // New: Limit for item postings
+
+        // Bad words for censorship (case-insensitive check will be performed)
+        const BAD_WORDS = ['badword1', 'swear', 'hate', 'stupid', 'idiot', 'fuck', 'shit', 'asshole', 'bitch', 'damn', 'scam', 'fraud'];
+
+        // Badge definitions with thresholds and types
+        const BADGES = [
+            { id: 'green_growth', emoji: '🌱', type: 'greenPoints', threshold: 10, nameKey: 'badge_green_growth' },
+            { id: 'eco_master', emoji: '♻️', type: 'greenPoints', threshold: 100, nameKey: 'badge_eco_master' },
+            { id: 'community_champion', emoji: '🤝', type: 'greenPoints', threshold: 200, nameKey: 'badge_community_champion' },
+            { id: 'eco_guru', emoji: '💰', type: 'greenPoints', threshold: 500, nameKey: 'badge_eco_guru' },
+            { id: 'planet_hero', emoji: '🏆', type: 'greenPoints', threshold: 1000, nameKey: 'badge_planet_hero' },
+
+            { id: 'first_lister', emoji: '📦', type: 'itemsListed', threshold: 1, nameKey: 'badge_first_lister' },
+            { id: 'pro_lister', emoji: '🛍️', type: 'itemsListed', threshold: 5, nameKey: 'badge_pro_lister' },
+
+            { id: 'recycle_rookie', emoji: '🗑️', type: 'recycleLogs', threshold: 1, nameKey: 'badge_recycle_rookie' },
+            { id: 'recycle_pro', emoji: '🌎', type: 'recycleLogs', threshold: 10, nameKey: 'badge_recycle_pro' },
+
+            { id: 'first_tip', emoji: '💡', type: 'tipsShared', threshold: 1, nameKey: 'badge_first_tip' },
+            { id: 'knowledge_sharer', emoji: '📚', type: 'tipsShared', threshold: 5, nameKey: 'badge_knowledge_sharer' },
+
+            { id: 'first_donor', emoji: '💖', type: 'totalDonationsCount', threshold: 1, nameKey: 'badge_first_donor' },
+            { id: 'philanthropist', emoji: '🌟', type: 'totalDonationsCount', threshold: 5, nameKey: 'badge_philanthropist' },
+
+            { id: 'penny_saver', emoji: '💸', type: 'totalSpending', threshold: 50, nameKey: 'badge_penny_saver' },
+            { id: 'budget_master', emoji: '📈', type: 'totalSpending', threshold: 200, nameKey: 'badge_budget_master' }
+        ];
+
+
+        // --- Translation Data ---
+        let currentLang = 'vi'; // Default language
+
+        const translations = {
+            'en': {
+                'app_title': 'EcoNet – Exchange, Recycle, Earn',
+                'app_name': 'EcoNet',
+                'slogan': 'Recycle smarter. Earn better.',
+                'welcome_title': 'Welcome to EcoNet!',
+                'home_intro': 'Your hub for second-hand exchanges, smart recycling, and earning rewards.',
+                'your_green_points': 'Your Green Points:',
+                'earn_points_tagline': 'Earn points for every eco-action!',
+                'your_badges': 'Your Badges',
+                'unlock_more_badges': 'Unlock more badges as you progress!',
+                'exchange_trade_items': 'Exchange & Trade Items',
+                'list_item_btn': 'List Item',
+                'available_items_btn': 'Available Items',
+                'list_an_item_title': 'List an Item',
+                'item_name_label': 'Item Name',
+                'item_name_placeholder': 'e.g., Old Books, T-shirt',
+                'condition_label': 'Condition',
+                'select_condition_option': 'Select condition',
+                'condition_new': 'New (unused)',
+                'condition_like_new': 'Like New',
+                'condition_good': 'Good',
+                'condition_fair': 'Fair',
+                'listing_type_label': 'Listing Type',
+                'select_type_option': 'Select type',
+                'type_give_away': 'Give Away (Free)',
+                'type_trade': 'Trade (Barter)',
+                'type_sell': 'Sell (Low Cost)',
+                'price_label': 'Price ($)',
+                'price_placeholder': 'e.g., 10.00',
+                'looking_for_label': 'Looking For (e.g., "art supplies", "plants")',
+                'looking_for_placeholder': 'What are you looking for in exchange?',
+                'description_label': 'Description',
+                'description_placeholder': 'Describe your item and what you\'re looking for if trading.',
+                'list_item_submit_btn': 'List Item',
+                'filter_items_title': 'Filter Items',
+                'by_type_label': 'By Type',
+                'all_types_option': 'All Types',
+                'by_condition_label': 'By Condition',
+                'all_conditions_option': 'All Conditions',
+                'available_items_title': 'Available Items',
+                'no_items_message': 'No items listed yet. Be the first!',
+                'recycle_earn_points_title': 'Recycle & Earn Points',
+                'smart_recycle_locator_title': 'Smart Recycle Locator',
+                'smart_recycle_locator_desc': 'Find nearby recycling machines and partner drop-off points using our GPS-enabled map.',
+                'locate_recycling_points_btn': 'Locate Recycling Points',
+                'map_placeholder': '*(Map functionality is a placeholder for demonstration)*',
+                'log_recycling_activity_title': 'Log Recycling Activity',
+                'recyclable_type_label': 'Recyclable Type',
+                'quantity_label': 'Quantity (e.g., items, kg)',
+                'quantity_placeholder': 'e.g., 5 bottles, 2 kg',
+                'log_activity_earn_points_btn': 'Log Activity & Earn Points',
+                'each_log_earns_points': '*(Each log earns Green Points based on quantity)*',
+                'spending_tracker_title': 'Spending Tracker',
+                'add_new_expense_title': 'Add New Expense',
+                'expense_description_label': 'Description',
+                'expense_description_placeholder': 'e.g., Groceries, Coffee',
+                'amount_label': 'Amount ($)',
+                'amount_placeholder': 'e.g., 25.50',
+                'add_expense_btn': 'Add Expense',
+                'your_expenses_title': 'Your Expenses',
+                'no_expenses_message': 'No expenses added yet.',
+                'total_spending_label': 'Total Spending:',
+                'community_tips_title': 'Community & Tips',
+                'community_tips_btn': 'Community Tips',
+                'share_tip_btn': 'Share Tip',
+                'challenges_btn': 'Challenges',
+                'community_tips_list_title': 'Community Tips',
+                'no_tips_message': 'No user tips shared yet. Be the first!',
+                'share_your_saving_tip_title': 'Share Your Saving Tip',
+                'tip_title_label': 'Tip Title',
+                'tip_title_placeholder': 'e.g., DIY Cleaning Solutions',
+                'your_tip_label': 'Your Tip',
+                'your_tip_placeholder': 'Describe your amazing saving tip here...',
+                'share_tip_submit_btn': 'Share Tip',
+                'join_challenges_title': 'Join Challenges!',
+                'challenges_desc': 'Participate in community challenges to boost your Green Points and make a bigger impact.',
+                'view_challenges_btn': 'View Challenges',
+                'donate_earnings_title': 'Donate Your Earnings',
+                'your_recycling_earnings_title': 'Your Recycling Earnings',
+                'donate_earnings_desc': 'Convert your accumulated recycling earnings into a donation to environmental or social causes. Each donation earns Green Points!',
+                'available_to_donate_label': 'Available to Donate:',
+                'donate_now_btn': 'Donate Earnings Now',
+                'why_donate_title': 'Why Donate?',
+                'why_donate_desc': 'Your donations help fund critical environmental initiatives, support local communities, and promote sustainable practices worldwide. Every dollar makes a difference!',
+                'your_profile_title': 'Your Profile',
+                'econet_user': 'EcoNet User',
+                'member_since': 'Member since: July 2025',
+                'total_green_points_profile': 'Total Green Points:',
+                'total_donations_profile': 'Total Donations:',
+                'badges_earned_profile': 'Badges Earned',
+                'edit_profile_btn': 'Edit Profile',
+                'settings_btn': 'Settings',
+                'your_rewards_title': 'Your Rewards',
+                'convert_points_desc': 'Convert your Green Points into real money once per month!',
+                'available_money_label': 'Available Money:',
+                'convert_points_to_money_btn': 'Convert Green Points to Money',
+                'conversion_status_ready': 'Ready for conversion this month!',
+                'settings_page_title': 'Settings',
+                'app_preferences_title': 'App Preferences',
+                'customize_experience_desc': 'Customize your EcoNet experience.',
+                'language_select_label': 'Language:',
+                'notification_settings_btn': 'Notification Settings (Coming Soon!)',
+                'privacy_options_btn': 'Privacy Options (Coming Soon!)',
+                'about_econet_title': 'About EcoNet',
+                'version_info': 'Version 1.0.0',
+                'copyright_info': '© 2025 EcoNet. All rights reserved.',
+                'nav_home': 'Home',
+                'nav_exchange': 'Exchange',
+                'nav_recycle': 'Recycle',
+                'nav_spending': 'Spending',
+                'nav_community': 'Community',
+                'nav_donate': 'Donate',
+                'nav_profile': 'Profile',
+                'condition_label_modal': 'Condition:',
+                'listing_type_label_modal': 'Listing Type:',
+                'price_label_modal': 'Price:',
+                'looking_for_label_modal': 'Looking For:',
+                'listed_on_label_modal': 'Listed On:',
+                'description_label_modal': 'Description:',
+                'buy_item_btn_modal': 'Buy Item',
+                'propose_trade_btn_modal': 'Propose Trade',
+                'close_btn_modal': 'Close',
+                'report_content_title': 'Report Content',
+                'report_reason_prompt': 'Please select a reason for reporting this content:',
+                'reason_inappropriate': 'Inappropriate Content',
+                'reason_scam': 'Scam/Fraudulent',
+                'reason_broken': 'Broken/Misleading Item',
+                'reason_other': 'Other (please specify)',
+                'report_other_placeholder': 'Please describe your reason...',
+                'submit_report_btn': 'Submit Report',
+                'cancel_btn_modal': 'Cancel',
+                'donate_recycling_earnings_modal_title': 'Donate Your Recycling Earnings',
+                'donate_recycling_earnings_modal_desc': 'You have {amount} available from recycling. Would you like to donate this to a charity or environmental project? You will receive Green Points for your contribution!',
+                'donate_to_charity_btn': 'Donate to Charity',
+                'donate_to_environmental_btn': 'Donate to Environmental',
+                'no_thanks_btn': 'No, thanks',
+                'item_buy_confirm': 'Are you sure you want to buy "{item_name}" for ${price}?',
+                'not_enough_money': 'Not enough money! You need ${needed} but have ${current}.',
+                'purchase_success': 'Successfully purchased "{item_name}" for ${price}!',
+                'insufficient_funds': 'Insufficient funds to complete this purchase.',
+                'trade_proposal_sent': 'You proposed a trade for "{item_name}"! (Feature under development)',
+                'logged_recycle_activity': 'Logged {quantity} of {type}! You earned {points} Green Points.',
+                'invalid_recycle_input': 'Please select a type and enter a valid quantity for recycling.',
+                'tip_upvoted': 'Upvoted tip!',
+                'tip_downvoted': 'Downvoted tip!',
+                'already_voted_tip': 'You have already voted on this tip in this session!',
+                'congrats_badge': 'Congratulations! You earned the "{badge_name}" badge!',
+                'select_report_reason': 'Please select a reason for reporting.',
+                'specify_other_reason': 'Please specify your reason for "Other".',
+                'content_reported_success': 'Content reported successfully! Reason: {reason}',
+                'daily_post_limit_reached': 'You can only post {max_items} items per day. Please try again tomorrow.',
+                'invalid_price_for_sell': 'Please enter a valid price for selling the item.',
+                'specify_trade_item': 'Please specify what you are looking for in exchange.',
+                'inappropriate_content_item': 'Your item details contain inappropriate content. Please revise.',
+                'item_listed_success': '"{item_name}" listed successfully! You earned {points} Green Points.',
+                'fill_all_item_details': 'Please fill in all required item details.',
+                'expense_added_success': 'Expense added successfully!',
+                'invalid_expense_input': 'Please enter a valid description and amount.',
+                'inappropriate_content_tip': 'Your tip title or content contains inappropriate content. Please revise.',
+                'tip_shared_success': 'Your tip has been shared!',
+                'fill_all_tip_details': 'Please enter both a title and content for your tip.',
+                'edit_profile_coming_soon': 'Edit Profile feature coming soon!',
+                'view_challenges_message': 'Viewing community challenges!',
+                'convert_points_limit': 'You can only convert points to money once per month. Please check back next month!',
+                'convert_points_success': 'Successfully converted {points} Green Points into ${money}!',
+                'convert_points_insufficient': 'You need at least {needed_points} Green Points to convert to money.',
+                'monthly_refund_prompt': 'It\'s a new month! Would you like to donate your general refund money to charity or environmental projects? You\'ll earn Green Points!',
+                'no_earnings_to_donate': 'You have no earnings to donate yet.',
+                'donation_skipped': 'Donation skipped for now.',
+                'logged_recycle_success': 'Logged {quantity} of {type}! You earned {points} Green Points.',
+                'invalid_recycle_log': 'Please select a type and enter a valid quantity for recycling.',
+                'total_spending_label_short': 'Total Spending:',
+                'badge_green_growth': 'Green Growth',
+                'badge_eco_master': 'Eco Master',
+                'badge_community_champion': 'Community Champion',
+                'badge_eco_guru': 'Eco Guru',
+                'badge_planet_hero': 'Planet Hero',
+                'badge_first_lister': 'First Lister',
+                'badge_pro_lister': 'Pro Lister',
+                'badge_recycle_rookie': 'Recycle Rookie',
+                'badge_recycle_pro': 'Recycle Pro',
+                'badge_first_tip': 'First Tip',
+                'badge_knowledge_sharer': 'Knowledge Sharer',
+                'badge_first_donor': 'First Donor',
+                'badge_philanthropist': 'Philanthropist',
+                'badge_penny_saver': 'Penny Saver',
+                'badge_budget_master': 'Budget Master',
+                'ad_techcombank_title': 'Partner Spotlight: Techcombank',
+                'ad_techcombank_text': 'EcoNet is proud to partner with Techcombank to support sustainable initiatives. Bank smarter, live greener!',
+                'ad_techcombank_cta': 'Learn More'
+            },
+            'vi': {
+                'app_title': 'EcoNet – Trao đổi, Tái chế, Kiếm thưởng',
+                'app_name': 'EcoNet',
+                'slogan': 'Tái chế thông minh. Kiếm thưởng tốt hơn.',
+                'welcome_title': 'Chào mừng đến với EcoNet!',
+                'home_intro': 'Trung tâm của bạn để trao đổi đồ cũ, tái chế thông minh và kiếm phần thưởng.',
+                'your_green_points': 'Điểm Xanh của bạn:',
+                'earn_points_tagline': 'Kiếm điểm cho mỗi hành động xanh!',
+                'your_badges': 'Huy hiệu của bạn',
+                'unlock_more_badges': 'Mở khóa thêm huy hiệu khi bạn tiến bộ!',
+                'exchange_trade_items': 'Trao đổi & Giao dịch Vật phẩm',
+                'list_item_btn': 'Đăng Vật phẩm',
+                'available_items_btn': 'Vật phẩm Khả dụng',
+                'list_an_item_title': 'Đăng một Vật phẩm',
+                'item_name_label': 'Tên Vật phẩm',
+                'item_name_placeholder': 'ví dụ: Sách cũ, Áo thun',
+                'condition_label': 'Tình trạng',
+                'select_condition_option': 'Chọn tình trạng',
+                'condition_new': 'Mới (chưa sử dụng)',
+                'condition_like_new': 'Như mới',
+                'condition_good': 'Tốt',
+                'condition_fair': 'Khá',
+                'listing_type_label': 'Loại Đăng bán',
+                'select_type_option': 'Chọn loại',
+                'type_give_away': 'Tặng (Miễn phí)',
+                'type_trade': 'Trao đổi (Đổi hàng)',
+                'type_sell': 'Bán (Giá thấp)',
+                'price_label': 'Giá ($)',
+                'price_placeholder': 'ví dụ: 10.00',
+                'looking_for_label': 'Tìm kiếm (ví dụ: "vật tư nghệ thuật", "cây cảnh")',
+                'looking_for_placeholder': 'Bạn đang tìm kiếm gì để đổi lấy?',
+                'description_label': 'Mô tả',
+                'description_placeholder': 'Mô tả vật phẩm của bạn và những gì bạn đang tìm kiếm nếu trao đổi.',
+                'list_item_submit_btn': 'Đăng Vật phẩm',
+                'filter_items_title': 'Lọc Vật phẩm',
+                'by_type_label': 'Theo Loại',
+                'all_types_option': 'Tất cả Loại',
+                'by_condition_label': 'Theo Tình trạng',
+                'all_conditions_option': 'Tất cả Tình trạng',
+                'available_items_title': 'Vật phẩm Khả dụng',
+                'no_items_message': 'Chưa có vật phẩm nào được đăng. Hãy là người đầu tiên!',
+                'recycle_earn_points_title': 'Tái chế & Kiếm điểm',
+                'smart_recycle_locator_title': 'Công cụ định vị tái chế thông minh',
+                'smart_recycle_locator_desc': 'Tìm máy tái chế và điểm thu gom đối tác gần đó bằng bản đồ hỗ trợ GPS của chúng tôi.',
+                'locate_recycling_points_btn': 'Tìm điểm tái chế',
+                'map_placeholder': '*(Chức năng bản đồ chỉ là phần giữ chỗ để minh họa)*',
+                'log_recycling_activity_title': 'Ghi lại hoạt động tái chế',
+                'recyclable_type_label': 'Loại vật liệu tái chế',
+                'quantity_label': 'Số lượng (ví dụ: vật phẩm, kg)',
+                'quantity_placeholder': 'ví dụ: 5 chai, 2 kg',
+                'log_activity_earn_points_btn': 'Ghi lại hoạt động & Kiếm điểm',
+                'each_log_earns_points': '*(Mỗi lần ghi lại sẽ kiếm Điểm Xanh dựa trên số lượng)*',
+                'spending_tracker_title': 'Theo dõi Chi tiêu',
+                'add_new_expense_title': 'Thêm Chi tiêu Mới',
+                'expense_description_label': 'Mô tả',
+                'expense_description_placeholder': 'ví dụ: Thực phẩm, Cà phê',
+                'amount_label': 'Số tiền ($)',
+                'amount_placeholder': 'ví dụ: 25.50',
+                'add_expense_btn': 'Thêm Chi tiêu',
+                'your_expenses_title': 'Chi tiêu của bạn',
+                'no_expenses_message': 'Chưa có chi tiêu nào được thêm.',
+                'total_spending_label': 'Tổng chi tiêu:',
+                'community_tips_title': 'Cộng đồng & Mẹo',
+                'community_tips_btn': 'Mẹo cộng đồng',
+                'share_tip_btn': 'Chia sẻ mẹo',
+                'challenges_btn': 'Thử thách',
+                'community_tips_list_title': 'Mẹo cộng đồng',
+                'no_tips_message': 'Chưa có mẹo nào được chia sẻ. Hãy là người đầu tiên!',
+                'share_your_saving_tip_title': 'Chia sẻ mẹo tiết kiệm của bạn',
+                'tip_title_label': 'Tiêu đề mẹo',
+                'tip_title_placeholder': 'ví dụ: Giải pháp tẩy rửa tự làm',
+                'your_tip_label': 'Mẹo của bạn',
+                'your_tip_placeholder': 'Mô tả mẹo tiết kiệm tuyệt vời của bạn tại đây...',
+                'share_tip_submit_btn': 'Chia sẻ mẹo',
+                'join_challenges_title': 'Tham gia thử thách!',
+                'challenges_desc': 'Tham gia các thử thách cộng đồng để tăng Điểm Xanh và tạo ra tác động lớn hơn.',
+                'view_challenges_btn': 'Xem thử thách',
+                'donate_earnings_title': 'Quyên góp Thu nhập của bạn',
+                'your_recycling_earnings_title': 'Thu nhập từ tái chế của bạn',
+                'donate_earnings_desc': 'Chuyển đổi thu nhập tích lũy từ tái chế của bạn thành khoản đóng góp cho các mục đích môi trường hoặc xã hội. Mỗi khoản đóng góp sẽ kiếm được Điểm Xanh!',
+                'available_to_donate_label': 'Có sẵn để quyên góp:',
+                'donate_now_btn': 'Quyên góp ngay bây giờ',
+                'why_donate_title': 'Tại sao nên quyên góp?',
+                'why_donate_desc': 'Khoản đóng góp của bạn giúp tài trợ các sáng kiến môi trường quan trọng, hỗ trợ cộng đồng địa phương và thúc đẩy các hoạt động bền vững trên toàn thế giới. Mỗi đô la đều tạo ra sự khác biệt!',
+                'your_profile_title': 'Hồ sơ của bạn',
+                'econet_user': 'Người dùng EcoNet',
+                'member_since': 'Thành viên từ: Tháng 7 năm 2025',
+                'total_green_points_profile': 'Tổng Điểm Xanh:',
+                'total_donations_profile': 'Tổng số tiền quyên góp:',
+                'badges_earned_profile': 'Huy hiệu đã kiếm được',
+                'edit_profile_btn': 'Chỉnh sửa hồ sơ',
+                'settings_btn': 'Cài đặt',
+                'your_rewards_title': 'Phần thưởng của bạn',
+                'convert_points_desc': 'Chuyển đổi Điểm Xanh của bạn thành tiền mặt thật mỗi tháng một lần!',
+                'available_money_label': 'Số tiền khả dụng:',
+                'convert_points_to_money_btn': 'Chuyển đổi Điểm Xanh thành tiền',
+                'conversion_status_ready': 'Sẵn sàng chuyển đổi trong tháng này!',
+                'settings_page_title': 'Cài đặt',
+                'app_preferences_title': 'Tùy chọn ứng dụng',
+                'customize_experience_desc': 'Tùy chỉnh trải nghiệm EcoNet của bạn.',
+                'language_select_label': 'Ngôn ngữ:',
+                'notification_settings_btn': 'Cài đặt thông báo (Sắp ra mắt!)',
+                'privacy_options_btn': 'Tùy chọn quyền riêng tư (Sắp ra mắt!)',
+                'about_econet_title': 'Về EcoNet',
+                'version_info': 'Phiên bản 1.0.0',
+                'copyright_info': '© 2025 EcoNet. Bảo lưu mọi quyền.',
+                'nav_home': 'Trang chủ',
+                'nav_exchange': 'Trao đổi',
+                'nav_recycle': 'Tái chế',
+                'nav_spending': 'Chi tiêu',
+                'nav_community': 'Cộng đồng',
+                'nav_donate': 'Quyên góp',
+                'nav_profile': 'Hồ sơ',
+                'condition_label_modal': 'Tình trạng:',
+                'listing_type_label_modal': 'Loại Đăng bán:',
+                'price_label_modal': 'Giá:',
+                'looking_for_label_modal': 'Tìm kiếm:',
+                'listed_on_label_modal': 'Đăng vào:',
+                'description_label_modal': 'Mô tả:',
+                'buy_item_btn_modal': 'Mua Vật phẩm',
+                'propose_trade_btn_modal': 'Đề xuất Trao đổi',
+                'close_btn_modal': 'Đóng',
+                'report_content_title': 'Báo cáo Nội dung',
+                'report_reason_prompt': 'Vui lòng chọn lý do báo cáo nội dung này:',
+                'reason_inappropriate': 'Nội dung không phù hợp',
+                'reason_scam': 'Lừa đảo/Gian lận',
+                'reason_broken': 'Vật phẩm bị hỏng/Gây hiểu lầm',
+                'reason_other': 'Khác (vui lòng chỉ định)',
+                'report_other_placeholder': 'Vui lòng mô tả lý do của bạn...',
+                'submit_report_btn': 'Gửi Báo cáo',
+                'cancel_btn_modal': 'Hủy',
+                'donate_recycling_earnings_modal_title': 'Quyên góp Thu nhập từ Tái chế của bạn',
+                'donate_recycling_earnings_modal_desc': 'Bạn có {amount} có sẵn từ tái chế. Bạn có muốn quyên góp số tiền này cho một tổ chức từ thiện hoặc dự án môi trường không? Bạn sẽ nhận được Điểm Xanh cho đóng góp của mình!',
+                'donate_to_charity_btn': 'Quyên góp cho Từ thiện',
+                'donate_to_environmental_btn': 'Quyên góp cho Môi trường',
+                'no_thanks_btn': 'Không, cảm ơn',
+                'item_buy_confirm': 'Bạn có chắc chắn muốn mua "{item_name}" với giá ${price} không?',
+                'not_enough_money': 'Không đủ tiền! Bạn cần ${needed} nhưng chỉ có ${current}.',
+                'purchase_success': 'Đã mua thành công "{item_name}" với giá ${price}!',
+                'insufficient_funds': 'Không đủ tiền để hoàn tất giao dịch mua này.',
+                'trade_proposal_sent': 'Bạn đã đề xuất trao đổi cho "{item_name}"! (Tính năng đang phát triển)',
+                'logged_recycle_activity': 'Đã ghi lại {quantity} {type}! Bạn đã kiếm được {points} Điểm Xanh.',
+                'invalid_recycle_input': 'Vui lòng chọn loại và nhập số lượng hợp lệ để tái chế.',
+                'tip_upvoted': 'Đã ủng hộ mẹo!',
+                'tip_downvoted': 'Đã phản đối mẹo!',
+                'already_voted_tip': 'Bạn đã bỏ phiếu cho mẹo này trong phiên này rồi!',
+                'congrats_badge': 'Chúc mừng! Bạn đã kiếm được huy hiệu "{badge_name}"!',
+                'select_report_reason': 'Vui lòng chọn lý do báo cáo.',
+                'specify_other_reason': 'Vui lòng chỉ định lý do của bạn cho "Khác".',
+                'content_reported_success': 'Nội dung đã được báo cáo thành công! Lý do: {reason}',
+                'daily_post_limit_reached': 'Bạn chỉ có thể đăng tối đa {max_items} vật phẩm mỗi ngày. Vui lòng thử lại vào ngày mai.',
+                'invalid_price_for_sell': 'Vui lòng nhập giá hợp lệ để bán vật phẩm.',
+                'specify_trade_item': 'Vui lòng chỉ định những gì bạn đang tìm kiếm để trao đổi.',
+                'inappropriate_content_item': 'Chi tiết vật phẩm của bạn chứa nội dung không phù hợp. Vui lòng sửa lại.',
+                'item_listed_success': '"{item_name}" đã được đăng thành công! Bạn đã kiếm được {points} Điểm Xanh.',
+                'fill_all_item_details': 'Vui lòng điền đầy đủ thông tin vật phẩm yêu cầu.',
+                'expense_added_success': 'Chi tiêu đã được thêm thành công!',
+                'invalid_expense_input': 'Vui lòng nhập mô tả và số tiền hợp lệ.',
+                'inappropriate_content_tip': 'Tiêu đề hoặc nội dung mẹo của bạn chứa nội dung không phù hợp. Vui lòng sửa lại.',
+                'tip_shared_success': 'Mẹo của bạn đã được chia sẻ!',
+                'fill_all_tip_details': 'Vui lòng nhập cả tiêu đề và nội dung cho mẹo của bạn.',
+                'edit_profile_coming_soon': 'Tính năng chỉnh sửa hồ sơ sắp ra mắt!',
+                'view_challenges_message': 'Đang xem các thử thách cộng đồng!',
+                'convert_points_limit': 'Bạn chỉ có thể chuyển đổi điểm thành tiền một lần mỗi tháng. Vui lòng kiểm tra lại vào tháng tới!',
+                'convert_points_success': 'Đã chuyển đổi thành công {points} Điểm Xanh thành ${money}!',
+                'convert_points_insufficient': 'Bạn cần ít nhất {needed_points} Điểm Xanh để chuyển đổi thành tiền.',
+                'monthly_refund_prompt': 'Tháng mới rồi! Bạn có muốn quyên góp số tiền hoàn lại chung của mình cho các dự án từ thiện hoặc môi trường không? Bạn sẽ kiếm được Điểm Xanh!',
+                'no_earnings_to_donate': 'Bạn chưa có thu nhập để quyên góp.',
+                'donation_skipped': 'Đã bỏ qua quyên góp tạm thời.',
+                'logged_recycle_success': 'Đã ghi lại {quantity} {type}! Bạn đã kiếm được {points} Điểm Xanh.',
+                'invalid_recycle_log': 'Vui lòng chọn loại và nhập số lượng hợp lệ để tái chế.',
+                'total_spending_label_short': 'Tổng chi tiêu:',
+                'badge_green_growth': 'Tăng trưởng Xanh',
+                'badge_eco_master': 'Bậc thầy Sinh thái',
+                'badge_community_champion': 'Nhà vô địch Cộng đồng',
+                'badge_eco_guru': 'Chuyên gia Sinh thái',
+                'badge_planet_hero': 'Anh hùng Hành tinh',
+                'badge_first_lister': 'Người đăng đầu tiên',
+                'badge_pro_lister': 'Người đăng chuyên nghiệp',
+                'badge_recycle_rookie': 'Tái chế tập sự',
+                'badge_recycle_pro': 'Tái chế chuyên nghiệp',
+                'badge_first_tip': 'Mẹo đầu tiên',
+                'badge_knowledge_sharer': 'Người chia sẻ kiến thức',
+                'badge_first_donor': 'Người quyên góp đầu tiên',
+                'badge_philanthropist': 'Nhà từ thiện',
+                'badge_penny_saver': 'Người tiết kiệm',
+                'badge_budget_master': 'Bậc thầy ngân sách',
+                'ad_techcombank_title': 'Đối tác nổi bật: Techcombank',
+                'ad_techcombank_text': 'EcoNet tự hào hợp tác với Techcombank để hỗ trợ các sáng kiến bền vững. Ngân hàng thông minh hơn, sống xanh hơn!',
+                'ad_techcombank_cta': 'Tìm hiểu thêm'
+            }
+        };
+
+
+        // --- DOM Elements ---
+        const appContainer = document.getElementById('app-container');
+        const contentArea = document.getElementById('content-area');
+        const sections = document.querySelectorAll('.section-content');
+        const navItems = document.querySelectorAll('.nav-item');
+        const greenPointsDisplay = document.getElementById('green-points-display');
+        const profileGreenPointsDisplay = document.getElementById('profile-green-points-display');
+        const totalDonationsDisplay = document.getElementById('total-donations-display');
+        const donationModal = document.getElementById('donation-modal');
+        const messageBox = document.getElementById('message-box');
+        const currentEarningsToDonateSpan = document.getElementById('current-earnings-to-donate');
+        const moneyEarnedDisplay = document.getElementById('money-earned-display');
+
+        // Exchange Section elements
+        const listItemSubSection = document.getElementById('list-item-sub-section');
+        const availableItemsSubSection = document.getElementById('available-items-sub-section');
+        const exchangeListItemBtn = document.getElementById('exchange-list-item-btn');
+        const exchangeAvailableItemsBtn = document.getElementById('exchange-available-items-btn');
+        const itemListingForm = document.getElementById('item-listing-form');
+        const itemNameInput = document.getElementById('item-name');
+        const itemConditionSelect = document.getElementById('item-condition');
+        const itemTypeSelect = document.getElementById('item-type');
+        const itemPriceGroup = document.getElementById('item-price-group');
+        const itemPriceInput = document.getElementById('item-price');
+        const itemLookingForGroup = document.getElementById('item-looking-for-group');
+        const itemLookingForInput = document.getElementById('item-looking-for');
+        const itemListingsList = document.getElementById('item-listings-list');
+        const noItemsMessage = document.getElementById('no-items-message');
+        const itemDescriptionInput = document.getElementById('item-description');
+        const itemDetailModal = document.getElementById('item-detail-modal');
+        const itemDetailName = document.getElementById('item-detail-name');
+        const itemDetailCondition = document.getElementById('item-detail-condition');
+        const itemDetailType = document.getElementById('item-detail-type');
+        const itemDetailPriceDisplay = document.getElementById('item-detail-price-display');
+        const itemDetailPrice = document.getElementById('item-detail-price');
+        const itemDetailLookingForDisplay = document.getElementById('item-detail-looking-for-display');
+        const itemDetailLookingFor = document.getElementById('item-detail-looking-for');
+        const itemDetailDate = document.getElementById('item-detail-date');
+        const itemDetailDescription = document.getElementById('item-detail-description');
+        const buyItemConfirmBtn = document.getElementById('buy-item-confirm-btn');
+        const proposeTradeBtn = document.getElementById('propose-trade-btn');
+        const filterItemType = document.getElementById('filter-item-type');
+        const filterItemCondition = document.getElementById('filter-item-condition');
+
+        // Recycle Section elements
+        const recycleLogForm = document.getElementById('recycle-log-form');
+        const recycleTypeSelect = document.getElementById('recycle-type');
+        const recycleQuantityInput = document.getElementById('recycle-quantity');
+        const totalRecyclingEarningsDisplay = document.getElementById('total-recycling-earnings-display');
+
+        // Spending Tracker elements
+        const spendingForm = document.getElementById('spending-form');
+        const expenseDescriptionInput = document.getElementById('expense-description');
+        const expenseAmountInput = document.getElementById('expense-amount');
+        const spendingList = document.getElementById('spending-list');
+        const totalSpendingDisplay = document.getElementById('total-spending-display');
+
+        // Community elements
+        const communityTipsSubSection = document.getElementById('community-tips-sub-section');
+        const shareTipSubSection = document.getElementById('share-tip-sub-section');
+        const challengesSubSection = document.getElementById('challenges-sub-section');
+        const communityTipsBtn = document.getElementById('community-tips-btn');
+        const communityShareTipBtn = document.getElementById('community-share-tip-btn');
+        const communityChallengesBtn = document.getElementById('community-challenges-btn');
+        const tipForm = document.getElementById('tip-form');
+        const tipTitleInput = document.getElementById('tip-title');
+        const tipContentInput = document.getElementById('tip-content');
+        const tipsList = document.getElementById('tips-list');
+        const noTipsMessage = document.getElementById('no-tips-message');
+        const viewChallengesBtn = document.getElementById('view-challenges-btn');
+
+        // Donate Section elements
+        const donateEarningsDisplay = document.getElementById('donate-earnings-display');
+        const openDonationModalBtnDonateTab = document.getElementById('open-donation-modal-btn-donate-tab');
+
+        // Profile Section elements
+        const editProfileBtn = document.getElementById('edit-profile-btn');
+        const settingsBtn = document.getElementById('settings-btn');
+        const convertPointsBtn = document.getElementById('convert-points-btn');
+        const conversionStatusMessage = document.getElementById('conversion-status-message');
+        const homeBadgesDisplay = document.getElementById('badges-display');
+        const profileBadgesDisplay = document.getElementById('profile-badges-display');
+
+        // Settings Section elements
+        const settingsSection = document.getElementById('settings-section');
+        const languageSelect = document.getElementById('language-select'); // New language select
+
+        // Report Modal elements
+        const reportModal = document.getElementById('report-modal');
+        const reportForm = document.getElementById('report-form');
+        const reportOtherReasonTextarea = document.getElementById('report-other-reason');
+        const reportedContentIdInput = document.getElementById('reported-content-id');
+        const reportedContentTypeInput = document.getElementById('reported-content-type');
+
+
+        // --- Utility Functions ---
+
+        /**
+         * Translates all elements with data-lang-key attributes to the current language.
+         * @param {string} lang The language code (e.g., 'en', 'vi').
+         */
+        function setLanguage(lang) {
+            if (!translations[lang]) {
+                console.warn(`Translation for language '${lang}' not found. Falling back to English.`);
+                lang = 'en'; // Fallback to English
+            }
+            currentLang = lang;
+            document.documentElement.lang = lang; // Set HTML lang attribute
+
+            // Update title
+            const titleElement = document.querySelector('title');
+            if (titleElement) {
+                const titleKey = titleElement.dataset.langKey;
+                if (titleKey && translations[currentLang][titleKey]) {
+                    titleElement.textContent = translations[currentLang][titleKey];
+                }
+            }
+
+            document.querySelectorAll('[data-lang-key]').forEach(element => {
+                const key = element.dataset.langKey;
+                if (translations[currentLang][key]) {
+                    element.textContent = translations[currentLang][key];
+                }
+            });
+
+            document.querySelectorAll('[data-lang-placeholder-key]').forEach(element => {
+                const key = element.dataset.langPlaceholderKey;
+                if (translations[currentLang][key]) {
+                    element.placeholder = translations[currentLang][key];
+                }
+            });
+
+            // Update dynamically rendered content that needs translation
+            renderSpendingList();
+            renderItemListings(filterItemType.value, filterItemCondition.value);
+            renderTipsList();
+            renderBadges(); // Rerender badges to update their names
+            updateAllDisplays(); // To ensure messages are updated
+            saveData(); // Save selected language
+        }
+
+        /**
+         * Populates the language dropdown based on available translations.
+         */
+        function populateLanguageDropdown() {
+            if (!languageSelect) return;
+            languageSelect.innerHTML = ''; // Clear existing options
+            for (const langCode in translations) {
+                const option = document.createElement('option');
+                option.value = langCode;
+                // Use a specific key for language name if available, otherwise use code
+                // Adding a specific key for language name in translations if not present
+                const langNameKey = `language_name_${langCode}`;
+                if (!translations[langCode][langNameKey]) {
+                    translations[langCode][langNameKey] = langCode === 'en' ? 'English' : 'Tiếng Việt'; // Default names
+                }
+                option.textContent = translations[langCode][langNameKey];
+                languageSelect.appendChild(option);
+            }
+            languageSelect.value = currentLang; // Set selected language
+        }
+
+        /**
+         * Gets a translated string, with optional placeholders.
+         * @param {string} key The translation key.
+         * @param {object} [placeholders={}] An object with placeholder values.
+         * @returns {string} The translated string.
+         */
+        function getTranslation(key, placeholders = {}) {
+            let text = translations[currentLang][key] || translations['en'][key] || key; // Fallback to English, then key itself
+            for (const placeholder in placeholders) {
+                text = text.replace(`{${placeholder}}`, placeholders[placeholder]);
+            }
+            return text;
+        }
+
+        /**
+         * Displays a temporary message (like an Android Toast).
+         * @param {string} message The message to display.
+         * @param {number} duration The duration in milliseconds (default: 3000).
+         */
+        function showMessage(message, duration = 3000) {
+            messageBox.textContent = message;
+            messageBox.classList.remove('hidden', 'opacity-0');
+            messageBox.classList.add('opacity-100');
+
+            setTimeout(() => {
+                messageBox.classList.remove('opacity-100');
+                messageBox.classList.add('opacity-0');
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 300); // Allow fade-out transition
+            }, duration);
+        }
+
+        /**
+         * Checks if the given text contains any bad words from the predefined list.
+         * @param {string} text The text to check.
+         * @returns {boolean} True if bad words are found, false otherwise.
+         */
+        function containsBadWords(text) {
+            const lowerCaseText = text.toLowerCase();
+            for (const word of BAD_WORDS) {
+                if (lowerCaseText.includes(word)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Saves all relevant application data to localStorage.
+         */
+        function saveData() {
+            const data = {
+                greenPoints: greenPoints,
+                totalDonations: totalDonations, // Monetary value
+                recyclingEarnings: recyclingEarnings,
+                moneyEarned: moneyEarned,
+                spendingRecords: spendingRecords,
+                itemListings: itemListings,
+                savingTips: savingTips,
+                lastMonthlyRefundPromptMonth: lastMonthlyRefundPromptMonth,
+                lastPointsConversionMonth: lastPointsConversionMonth,
+                awardedBadges: awardedBadges,
+                lastItemPostDate: lastItemPostDate,
+                itemsPostedToday: itemsPostedToday,
+                reportedContent: reportedContent,
+                currentLang: currentLang, // Save current language
+                itemsListedCount: itemsListedCount, // Save new counters
+                recycleLogsCount: recycleLogsCount,
+                tipsSharedCount: tipsSharedCount,
+                totalDonationsCount: totalDonationsCount // Save new counter
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+        }
+
+        /**
+         * Loads all relevant application data from localStorage.
+         */
+        function loadData() {
+            const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (storedData) {
+                const data = JSON.parse(storedData);
+                greenPoints = data.greenPoints || 0;
+                totalDonations = data.totalDonations || 0;
+                recyclingEarnings = data.recyclingEarnings || 0;
+                moneyEarned = data.moneyEarned || 0;
+                spendingRecords = data.spendingRecords || [];
+                itemListings = data.itemListings || [];
+                savingTips = data.savingTips || [];
+                lastMonthlyRefundPromptMonth = data.lastMonthlyRefundPromptMonth !== undefined ? data.lastMonthlyRefundPromptMonth : -1;
+                lastPointsConversionMonth = data.lastPointsConversionMonth !== undefined ? data.lastPointsConversionMonth : -1;
+                awardedBadges = data.awardedBadges || {};
+                lastItemPostDate = data.lastItemPostDate || null;
+                itemsPostedToday = data.itemsPostedToday || 0;
+                reportedContent = data.reportedContent || [];
+                currentLang = data.currentLang || 'vi'; // Load language, default to 'vi'
+                itemsListedCount = data.itemsListedCount || 0; // Load new counters
+                recycleLogsCount = data.recycleLogsCount || 0;
+                tipsSharedCount = data.tipsSharedCount || 0;
+                totalDonationsCount = data.totalDonationsCount || 0; // Load new counter
+            }
+        }
+
+        /**
+         * Updates the display of Green Points, Total Donations, Recycling Earnings, and Money Earned across the app.
+         */
+        function updateAllDisplays() {
+            if (greenPointsDisplay) greenPointsDisplay.textContent = greenPoints;
+            if (profileGreenPointsDisplay) profileGreenPointsDisplay.textContent = greenPoints;
+            if (totalDonationsDisplay) totalDonationsDisplay.textContent = totalDonations;
+            // totalRecyclingEarningsDisplay is not used in HTML, removed this line
+            if (donateEarningsDisplay) donateEarningsDisplay.textContent = `$${recyclingEarnings.toFixed(2)}`;
+            if (moneyEarnedDisplay) moneyEarnedDisplay.textContent = `$${moneyEarned.toFixed(2)}`;
+            checkPointsConversionStatus(); // Update conversion status message
+            renderBadges(); // Re-render badges to reflect new awards
+        }
+
+        /**
+         * Renders the list of spending records and updates the total spending.
+         */
+        function renderSpendingList() {
+            if (!spendingList) return; // Null check
+            spendingList.innerHTML = ''; // Clear current list
+            let total = 0;
+
+            if (spendingRecords.length === 0) {
+                const li = document.createElement('li');
+                li.className = 'text-gray-500 text-center';
+                li.textContent = getTranslation('no_expenses_message');
+                spendingList.appendChild(li);
+            } else {
+                spendingRecords.forEach(record => {
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center p-3 bg-white rounded-lg shadow-sm border border-gray-100';
+                    li.innerHTML = `
+                        <div>
+                            <p class="font-medium text-gray-800">${record.description}</p>
+                            <p class="text-sm text-gray-500">${new Date(record.date).toLocaleDateString(currentLang === 'vi' ? 'vi-VN' : 'en-US')}</p>
+                        </div>
+                        <span class="font-bold text-red-500">-$${record.amount.toFixed(2)}</span>
+                    `;
+                    spendingList.appendChild(li);
+                    total += record.amount;
+                });
+            }
+            if (totalSpendingDisplay) totalSpendingDisplay.textContent = `$${total.toFixed(2)}`;
+        }
+
+        /**
+         * Renders the list of item listings, applying filters.
+         * @param {string} typeFilter 'all' or specific item type (e.g., 'Give Away').
+         * @param {string} conditionFilter 'all' or specific condition (e.g., 'Good').
+         */
+        function renderItemListings(typeFilter = 'all', conditionFilter = 'all') {
+            if (!itemListingsList) return; // Null check
+            itemListingsList.innerHTML = ''; // Clear current list
+
+            const filteredItems = itemListings.filter(item => {
+                const matchesType = typeFilter === 'all' || item.type === typeFilter;
+                const matchesCondition = conditionFilter === 'all' || item.condition === conditionFilter;
+                return matchesType && matchesCondition;
+            });
+
+            if (filteredItems.length === 0) {
+                if (noItemsMessage) {
+                    noItemsMessage.classList.remove('hidden');
+                    itemListingsList.appendChild(noItemsMessage); // Ensure message is inside the list container
+                }
+            } else {
+                if (noItemsMessage) noItemsMessage.classList.add('hidden');
+                filteredItems.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'bg-red-50 p-4 rounded-lg shadow-sm text-center';
+                    let priceDisplay = '';
+                    let actionButtonHtml = '';
+
+                    if (item.type === 'Sell' && item.price !== undefined && item.price !== null) {
+                        priceDisplay = `<p class="text-sm text-red-700 font-semibold mt-1">${getTranslation('price_label_modal')}: $${item.price.toFixed(2)}</p>`;
+                        actionButtonHtml = `<button class="btn-primary text-sm mt-3 buy-item-btn" data-item-id="${item.id}">${getTranslation('buy_item_btn_modal')}</button>`;
+                    } else if (item.type === 'Give Away') {
+                        priceDisplay = `<p class="text-sm text-red-700 font-semibold mt-1">${getTranslation('price_label_modal')}: ${getTranslation('type_give_away')}</p>`;
+                    } else if (item.type === 'Trade') {
+                        priceDisplay = `<p class="text-sm text-red-700 font-semibold mt-1">${getTranslation('price_label_modal')}: ${getTranslation('type_trade')}</p>`;
+                        actionButtonHtml = `<button class="btn-primary text-sm mt-3 propose-trade-btn" data-item-id="${item.id}">${getTranslation('propose_trade_btn_modal')}</button>`;
+                    }
+
+                    itemDiv.innerHTML = `
+                        <span class="text-5xl block mb-2">📦</span> <!-- Emoji for item image -->
+                        <h4 class="font-semibold text-red-800">${item.name}</h4>
+                        <p class="text-sm text-gray-700">${getTranslation('condition_label')}: ${getTranslation('condition_' + item.condition.toLowerCase().replace(' ', '_'))} | ${getTranslation('listing_type_label')}: ${getTranslation('type_' + item.type.toLowerCase().replace(' ', '_'))}</p>
+                        ${priceDisplay}
+                        <p class="text-xs text-gray-500 mt-1">${item.description.substring(0, 50)}${item.description.length > 50 ? '...' : ''}</p>
+                        <button class="btn-secondary text-sm mt-3 view-item-details" data-item-id="${item.id}">${getTranslation('view_item_details_btn')}</button>
+                        ${actionButtonHtml}
+                        <button class="btn-outline text-sm mt-3 report-item-btn" data-content-id="${item.id}" data-content-type="item">${getTranslation('submit_report_btn')}</button>
+                    `;
+                    itemListingsList.appendChild(itemDiv);
+                });
+
+                // Attach event listeners to new "View Details" buttons
+                document.querySelectorAll('.view-item-details').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const itemId = event.target.dataset.itemId;
+                        const item = itemListings.find(i => i.id === itemId);
+                        if (item) {
+                            if (itemDetailName) itemDetailName.textContent = item.name;
+                            if (itemDetailCondition) itemDetailCondition.textContent = getTranslation('condition_' + item.condition.toLowerCase().replace(' ', '_'));
+                            if (itemDetailType) itemDetailType.textContent = getTranslation('type_' + item.type.toLowerCase().replace(' ', '_'));
+                            if (itemDetailDate) itemDetailDate.textContent = new Date(item.date).toLocaleDateString(currentLang === 'vi' ? 'vi-VN' : 'en-US');
+                            if (itemDetailDescription) itemDetailDescription.textContent = item.description;
+
+                            // Show/hide price and buy button in modal
+                            if (item.type === 'Sell' && item.price !== undefined && item.price !== null) {
+                                if (itemDetailPriceDisplay) itemDetailPriceDisplay.classList.remove('hidden');
+                                if (itemDetailPrice) itemDetailPrice.textContent = `$${item.price.toFixed(2)}`;
+                                if (buyItemConfirmBtn) {
+                                    buyItemConfirmBtn.classList.remove('hidden');
+                                    buyItemConfirmBtn.dataset.itemId = item.id; // Set item ID for purchase
+                                }
+                                if (proposeTradeBtn) proposeTradeBtn.classList.add('hidden'); // Hide trade button
+                            } else {
+                                if (itemDetailPriceDisplay) itemDetailPriceDisplay.classList.add('hidden');
+                                if (buyItemConfirmBtn) buyItemConfirmBtn.classList.add('hidden');
+                            }
+
+                            // Show/hide looking for and propose trade button in modal
+                            if (item.type === 'Trade' && item.lookingFor) {
+                                if (itemDetailLookingForDisplay) itemDetailLookingForDisplay.classList.remove('hidden');
+                                if (itemDetailLookingFor) itemDetailLookingFor.textContent = item.lookingFor;
+                                if (proposeTradeBtn) {
+                                    proposeTradeBtn.classList.remove('hidden');
+                                    proposeTradeBtn.dataset.itemId = item.id; // Set item ID for trade
+                                }
+                                if (buyItemConfirmBtn) buyItemConfirmBtn.classList.add('hidden'); // Hide buy button
+                            } else {
+                                if (itemDetailLookingForDisplay) itemDetailLookingForDisplay.classList.add('hidden');
+                                if (proposeTradeBtn) proposeTradeBtn.classList.add('hidden');
+                            }
+
+                            if (itemDetailModal) itemDetailModal.classList.remove('hidden');
+                        }
+                    });
+                });
+
+                // Attach event listeners to new "Buy Now" buttons (in list view)
+                document.querySelectorAll('.buy-item-btn').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const itemId = event.target.dataset.itemId;
+                        const itemToBuy = itemListings.find(i => i.id === itemId);
+                        if (itemToBuy && itemToBuy.type === 'Sell' && itemToBuy.price !== undefined) {
+                            if (moneyEarned >= itemToBuy.price) {
+                                if (confirm(getTranslation('item_buy_confirm', { item_name: itemToBuy.name, price: itemToBuy.price.toFixed(2) }))) {
+                                    buyItem(itemId);
+                                }
+                            } else {
+                                showMessage(getTranslation('not_enough_money', { needed: itemToBuy.price.toFixed(2), current: moneyEarned.toFixed(2) }));
+                            }
+                        }
+                    });
+                });
+
+                // Attach event listeners to "Propose Trade" buttons (in list view)
+                document.querySelectorAll('.propose-trade-btn').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const itemId = event.target.dataset.itemId;
+                        const itemToTrade = itemListings.find(i => i.id === itemId);
+                        if (itemToTrade) {
+                            // Simulate trade proposal
+                            showMessage(getTranslation('trade_proposal_sent', { item_name: itemToTrade.name }));
+                        }
+                    });
+                });
+
+                // Attach event listeners to "Report" buttons
+                document.querySelectorAll('.report-item-btn').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const contentId = event.target.dataset.contentId;
+                        const contentType = event.target.dataset.contentType;
+                        showReportModal(contentId, contentType);
+                    });
+                });
+            }
+        }
+
+        /**
+         * Handles buying an item.
+         * @param {string} itemId The ID of the item to buy.
+         */
+        function buyItem(itemId) {
+            const itemIndex = itemListings.findIndex(item => item.id === itemId);
+            if (itemIndex > -1) {
+                const item = itemListings[itemIndex];
+                if (moneyEarned >= item.price) {
+                    moneyEarned -= item.price;
+                    itemListings.splice(itemIndex, 1); // Remove item from list
+                    saveData();
+                    updateAllDisplays();
+                    renderItemListings(filterItemType.value, filterItemCondition.value); // Re-render to show removal
+                    showMessage(getTranslation('purchase_success', { item_name: item.name, price: item.price.toFixed(2) }));
+                    if (itemDetailModal) itemDetailModal.classList.add('hidden'); // Close modal after purchase
+                } else {
+                    showMessage(getTranslation('insufficient_funds'));
+                }
+            }
+        }
+
+        /**
+         * Renders the list of shared saving tips.
+         */
+        function renderTipsList() {
+            if (!tipsList) return; // Add null check for tipsList
+
+            tipsList.innerHTML = ''; // Clear current list
+            if (savingTips.length === 0) {
+                if (noTipsMessage) {
+                    noTipsMessage.classList.remove('hidden');
+                }
+            } else {
+                if (noTipsMessage) noTipsMessage.classList.add('hidden');
+                // Sort tips by timestamp (most recent first)
+                const sortedTips = [...savingTips].sort((a, b) => {
+                    const dateA = new Date(a.timestamp || 0);
+                    const dateB = new Date(b.timestamp || 0);
+                    return dateB - dateA;
+                });
+
+                sortedTips.forEach(tip => {
+                    const tipDiv = document.createElement('div');
+                    tipDiv.className = 'bg-red-50 p-4 rounded-lg shadow-sm';
+                    tipDiv.innerHTML = `
+                        <h4 class="font-semibold text-red-800">"${tip.title}"</h4>
+                        <p class="text-sm text-gray-700 mt-1">${tip.content}</p>
+                        <div class="flex justify-end items-center text-gray-500 text-sm mt-2">
+                            <button class="emoji-button mr-2" onclick="voteTip('${tip.id}', 'up')">👍 ${tip.upvotes}</button>
+                            <button class="emoji-button ml-2" onclick="voteTip('${tip.id}', 'down')">👎 ${tip.downvotes}</button>
+                            <button class="btn-outline text-sm ml-2 report-tip-btn" data-content-id="${tip.id}" data-content-type="tip">${getTranslation('submit_report_btn')}</button>
+                        </div>
+                    `;
+                    tipsList.appendChild(tipDiv);
+                });
+
+                // Attach event listeners to "Report" buttons for tips
+                document.querySelectorAll('.report-tip-btn').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const contentId = event.target.dataset.contentId;
+                        const contentType = event.target.dataset.contentType;
+                        showReportModal(contentId, contentType);
+                    });
+                });
+            }
+        }
+
+        /**
+         * Handles voting on a saving tip.
+         * @param {string} tipId The ID of the tip to vote on.
+         * @param {string} type 'up' for upvote, 'down' for downvote.
+         */
+        function voteTip(tipId, type) {
+            // Check if this tip has already been voted on in this session
+            if (votedTipsSession.includes(tipId)) {
+                showMessage(getTranslation('already_voted_tip'));
+                return;
+            }
+
+            const tipIndex = savingTips.findIndex(tip => tip.id === tipId);
+            if (tipIndex > -1) {
+                if (type === 'up') {
+                    savingTips[tipIndex].upvotes++;
+                    showMessage(getTranslation('tip_upvoted'));
+                } else if (type === 'down') {
+                    savingTips[tipIndex].downvotes++;
+                    showMessage(getTranslation('tip_downvoted'));
+                }
+                votedTipsSession.push(tipId); // Mark as voted for this session
+                saveData(); // Save updated vote counts
+                renderTipsList(); // Re-render to show updated votes
+            }
+        }
+
+        // Expose voteTip to global scope for onclick in dynamically added elements
+        window.voteTip = voteTip;
+
+        /**
+         * Renders the badges on both Home and Profile sections based on awardedBadges.
+         */
+        function renderBadges() {
+            // Select the specific div for badges within homeBadgesDisplay
+            const homeBadgesContainer = homeBadgesDisplay ? homeBadgesDisplay.querySelector('div.flex.flex-wrap') : null;
+            // profileBadgesDisplay itself is the container
+            const profileBadgesContainer = profileBadgesDisplay;
+
+            // Clear existing badges, with null checks
+            if (homeBadgesContainer) {
+                homeBadgesContainer.innerHTML = '';
+            } else {
+                console.error("homeBadgesContainer not found for rendering badges!");
+            }
+
+            if (profileBadgesContainer) {
+                profileBadgesContainer.innerHTML = '';
+            } else {
+                console.error("profileBadgesContainer not found for rendering badges!");
+            }
+
+            BADGES.forEach(badge => {
+                const isAwarded = awardedBadges[badge.id];
+                const badgeHtml = `
+                    <div class="badge-item ${isAwarded ? 'awarded' : ''}" data-badge-id="${badge.id}">
+                        <span>${badge.emoji}</span>
+                        <span>${getTranslation(badge.nameKey)}</span>
+                    </div>
+                `;
+                if (homeBadgesContainer) {
+                    homeBadgesContainer.insertAdjacentHTML('beforeend', badgeHtml);
+                }
+                if (profileBadgesContainer) {
+                    profileBadgesContainer.insertAdjacentHTML('beforeend', badgeHtml);
+                }
+            });
+        }
+
+        /**
+         * Checks current Green Points and other counters and awards badges if thresholds are met.
+         */
+        function checkAndAwardBadges() {
+            const totalCurrentSpending = spendingRecords.reduce((sum, record) => sum + record.amount, 0);
+
+            BADGES.forEach(badge => {
+                if (!awardedBadges[badge.id]) { // Only check if not already awarded
+                    let meetsThreshold = false;
+                    switch (badge.type) {
+                        case 'greenPoints':
+                            meetsThreshold = greenPoints >= badge.threshold;
+                            break;
+                        case 'itemsListed':
+                            meetsThreshold = itemsListedCount >= badge.threshold;
+                            break;
+                        case 'recycleLogs':
+                            meetsThreshold = recycleLogsCount >= badge.threshold;
+                            break;
+                        case 'tipsShared':
+                            meetsThreshold = tipsSharedCount >= badge.threshold;
+                            break;
+                        case 'totalDonationsCount':
+                            meetsThreshold = totalDonationsCount >= badge.threshold;
+                            break;
+                        case 'totalSpending':
+                            meetsThreshold = totalCurrentSpending >= badge.threshold;
+                            break;
+                    }
+
+                    if (meetsThreshold) {
+                        awardedBadges[badge.id] = true;
+                        showMessage(getTranslation('congrats_badge', { badge_name: getTranslation(badge.nameKey) }));
+                        saveData(); // Save new badge status
+                        renderBadges(); // Update badge display
+                    }
+                }
+            });
+        }
+
+        /**
+         * Shows the report modal and pre-fills content ID and type.
+         * @param {string} contentId The ID of the content being reported.
+         * @param {string} contentType The type of content ('item' or 'tip').
+         */
+        function showReportModal(contentId, contentType) {
+            if (reportedContentIdInput) reportedContentIdInput.value = contentId;
+            if (reportedContentTypeInput) reportedContentTypeInput.value = contentType;
+            if (reportOtherReasonTextarea) reportOtherReasonTextarea.classList.add('hidden'); // Hide other reason by default
+            if (reportForm) reportForm.reset(); // Reset form fields
+            if (reportModal) reportModal.classList.remove('hidden');
+        }
+
+        /**
+         * Handles the submission of a report.
+         * @param {Event} event The form submission event.
+         */
+        function submitReport(event) {
+            event.preventDefault();
+            const contentId = reportedContentIdInput ? reportedContentIdInput.value : '';
+            const contentType = reportedContentTypeInput ? reportedContentTypeInput.value : '';
+            const selectedReason = document.querySelector('input[name="report-reason"]:checked');
+
+            if (!selectedReason) {
+                showMessage(getTranslation('select_report_reason'));
+                return;
+            }
+
+            let reason = selectedReason.value;
+            if (reason === 'Other' && reportOtherReasonTextarea && reportOtherReasonTextarea.value.trim() !== '') {
+                reason = `${getTranslation('reason_other')}: ${reportOtherReasonTextarea.value.trim()}`;
+            } else if (reason === 'Other') {
+                showMessage(getTranslation('specify_other_reason'));
+                return;
+            }
+
+            const report = {
+                contentId: contentId,
+                contentType: contentType,
+                reason: reason,
+                reportedAt: new Date().toISOString()
+            };
+
+            reportedContent.push(report);
+            saveData();
+            showMessage(getTranslation('content_reported_success', { reason: reason }));
+            if (reportModal) reportModal.classList.add('hidden'); // Hide the modal
+        }
+
+        // Expose submitReport to global scope for onclick in dynamically added elements
+        window.submitReport = submitReport;
+
+
+        // --- Core Logic Functions ---
+
+        let currentActiveSection = 'home-section'; // Track the currently active section
+        let currentActiveExchangeSubSection = 'list-item-sub-section'; // Track active sub-section in Exchange
+        let currentActiveCommunitySubSection = 'community-tips-sub-section'; // Track active sub-section in Community
+
+        /**
+         * Shows the specified content section with a smooth transition.
+         * @param {string} sectionId The ID of the section to show.
+         */
+        function showSection(sectionId) {
+            if (sectionId === currentActiveSection) return; // Do nothing if already active
+
+            const outgoingSection = document.getElementById(currentActiveSection);
+            const incomingSection = document.getElementById(sectionId);
+
+            // 1. Start outgoing animation
+            if (outgoingSection) {
+                outgoingSection.classList.remove('active');
+                outgoingSection.classList.add('leaving'); // Start slide-out animation
+                // After animation, hide it completely
+                setTimeout(() => {
+                    outgoingSection.classList.add('hidden');
+                    outgoingSection.classList.remove('leaving'); // Clean up leaving class
+                    outgoingSection.style.transform = 'translateX(100%)'; // Reset position for next time (off-screen right)
+                }, ANIMATION_DURATION);
+            }
+
+            // 2. Prepare incoming section and start its animation
+            if (incomingSection) {
+                incomingSection.classList.remove('hidden');
+                // Ensure it starts from the correct off-screen position before activating
+                incomingSection.style.transform = 'translateX(100%)'; // Start off-screen right
+                // A tiny delay might be needed for the browser to register the initial state
+                setTimeout(() => {
+                    incomingSection.classList.add('active'); // Start slide-in animation
+                    incomingSection.style.transform = 'translateX(0)'; // Ensure final state is correct
+                }, 10); // Minimal delay
+            }
+
+            currentActiveSection = sectionId; // Update active section tracker
+
+            // Update active nav item styling
+            navItems.forEach(item => {
+                if (item.dataset.section === sectionId) {
+                    item.classList.add('bg-red-600');
+                } else {
+                    item.classList.remove('bg-red-600');
+                }
+            });
+
+            // If navigating to Exchange, ensure its default sub-section is active
+            if (sectionId === 'exchange-section') {
+                showExchangeSubSection('list-item-sub-section');
+            }
+            // If navigating to Community, ensure its default sub-section is active
+            if (sectionId === 'community-section') {
+                showCommunitySubSection('community-tips-sub-section');
+            }
+            // If navigating to Donate, update earnings display
+            if (sectionId === 'donate-section') {
+                if (donateEarningsDisplay) donateEarningsDisplay.textContent = `$${recyclingEarnings.toFixed(2)}`;
+            }
+        }
+
+        /**
+         * Manages sub-section visibility within the Exchange tab.
+         * @param {string} subSectionId The ID of the sub-section to show ('list-item-sub-section' or 'available-items-sub-section').
+         */
+        function showExchangeSubSection(subSectionId) {
+            if (subSectionId === currentActiveExchangeSubSection) return;
+
+            const outgoingSubSection = document.getElementById(currentActiveExchangeSubSection);
+            const incomingSubSection = document.getElementById(subSectionId);
+
+            // Apply leaving animation to outgoing sub-section
+            if (outgoingSubSection) {
+                outgoingSubSection.classList.remove('active');
+                outgoingSubSection.classList.add('leaving');
+                setTimeout(() => {
+                    outgoingSubSection.classList.add('hidden');
+                    outgoingSubSection.classList.remove('leaving');
+                    outgoingSubSection.style.transform = 'translateX(100%)';
+                }, ANIMATION_DURATION);
+            }
+
+            // Apply entering animation to incoming sub-section
+            if (incomingSubSection) {
+                incomingSubSection.classList.remove('hidden');
+                incomingSubSection.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    incomingSubSection.classList.add('active');
+                    incomingSubSection.style.transform = 'translateX(0)';
+                }, 10);
+            }
+            currentActiveExchangeSubSection = subSectionId;
+
+            // Re-render listings when switching to available items to apply filters
+            if (subSectionId === 'available-items-sub-section') {
+                renderItemListings(filterItemType.value, filterItemCondition.value);
+            }
+        }
+
+        /**
+         * Manages sub-section visibility within the Community tab.
+         * @param {string} subSectionId The ID of the sub-section to show ('community-tips-sub-section', 'share-tip-sub-section', 'challenges-sub-section').
+         */
+        function showCommunitySubSection(subSectionId) {
+            if (subSectionId === currentActiveCommunitySubSection) return;
+
+            const outgoingSubSection = document.getElementById(currentActiveCommunitySubSection);
+            const incomingSubSection = document.getElementById(subSectionId);
+
+            // Apply leaving animation to outgoing sub-section
+            if (outgoingSubSection) {
+                outgoingSubSection.classList.remove('active');
+                outgoingSubSection.classList.add('leaving');
+                setTimeout(() => {
+                    outgoingSubSection.classList.add('hidden');
+                    outgoingSubSection.classList.remove('leaving');
+                    outgoingSubSection.style.transform = 'translateX(100%)';
+                }, ANIMATION_DURATION);
+            }
+
+            // Apply entering animation to incoming sub-section
+            if (incomingSubSection) {
+                incomingSubSection.classList.remove('hidden');
+                incomingSubSection.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    incomingSubSection.classList.add('active');
+                    incomingSubSection.style.transform = 'translateX(0)';
+                }, 10);
+            }
+            currentActiveCommunitySubSection = subSectionId;
+
+            // Re-render tips list if navigating to community tips
+            if (subSectionId === 'community-tips-sub-section') {
+                renderTipsList();
+            }
+        }
+
+
+        /**
+         * Displays the donation modal, showing current recycling earnings.
+         */
+        function showDonationModal() {
+            if (currentEarningsToDonateSpan) currentEarningsToDonateSpan.textContent = `$${recyclingEarnings.toFixed(2)}`;
+            if (donationModal) donationModal.classList.remove('hidden');
+        }
+
+        /**
+         * Handles the user's donation choice from recycling earnings.
+         * @param {string} choice 'charity', 'environmental', or 'skip'.
+         */
+        function handleDonation(choice) {
+            let message = '';
+            if (choice === 'charity' || choice === 'environmental') {
+                if (recyclingEarnings > 0) {
+                    const pointsEarned = Math.floor(recyclingEarnings * POINTS_PER_DONATION_DOLLAR);
+                    greenPoints += pointsEarned;
+                    totalDonations += recyclingEarnings; // Add monetary value to total donations
+                    totalDonationsCount++; // Increment badge counter
+                    recyclingEarnings = 0; // Reset recycling earnings after donation
+                    message = getTranslation('donate_recycling_earnings_modal_desc', { amount: `$${recyclingEarnings.toFixed(2)}` }); // Reusing key, but it's fine for the message
+                    message = getTranslation('logged_recycle_success', { quantity: '', type: 'earnings', points: pointsEarned }); // Simplified message
+                } else {
+                    message = getTranslation('no_earnings_to_donate');
+                }
+            } else if (choice === 'skip') {
+                message = getTranslation('donation_skipped');
+            }
+            saveData();
+            updateAllDisplays();
+            checkAndAwardBadges(); // Check badges after donation
+            if (donationModal) donationModal.classList.add('hidden'); // Hide the modal
+            showMessage(message);
+        }
+
+        /**
+         * Checks if a monthly "refund donation" prompt should be shown.
+         * It appears once per calendar month.
+         * @returns {boolean} True if the prompt should be shown, false otherwise.
+         */
+        function shouldShowMonthlyRefundPrompt() {
+            const currentMonth = new Date().getMonth(); // 0-indexed (Jan=0, Dec=11)
+            return currentMonth !== lastMonthlyRefundPromptMonth;
+        }
+
+        /**
+         * Displays a monthly refund donation prompt (if applicable).
+         * This is a separate prompt for general "refund money" not tied to recycling earnings.
+         */
+        function showMonthlyRefundPrompt() {
+            // This modal is repurposed for recycling earnings, so we'll use a custom message box for this.
+            // In a real app, you'd have a separate modal for general refund donations.
+            showMessage(getTranslation('monthly_refund_prompt'), 5000);
+            // After showing, update the lastMonthlyRefundPromptMonth to prevent immediate re-showing
+            lastMonthlyRefundPromptMonth = new Date().getMonth();
+            saveData();
+        }
+
+        /**
+         * Handles the conversion of Green Points to money.
+         * Can only be done once per calendar month.
+         */
+        function convertPointsToMoney() {
+            const currentMonth = new Date().getMonth();
+            if (currentMonth === lastPointsConversionMonth) {
+                showMessage(getTranslation('convert_points_limit'));
+                return;
+            }
+
+            if (greenPoints >= POINTS_TO_MONEY_RATE) {
+                const moneyConverted = Math.floor(greenPoints / POINTS_TO_MONEY_RATE);
+                const pointsDeducted = moneyConverted * POINTS_TO_MONEY_RATE;
+
+                greenPoints -= pointsDeducted;
+                moneyEarned += moneyConverted;
+                lastPointsConversionMonth = currentMonth; // Record the month of conversion
+
+                showMessage(getTranslation('convert_points_success', { points: pointsDeducted, money: moneyConverted.toFixed(2) }));
+            } else {
+                showMessage(getTranslation('convert_points_insufficient', { needed_points: POINTS_TO_MONEY_RATE }));
+            }
+            saveData();
+            updateAllDisplays();
+        }
+
+        /**
+         * Checks if points can be converted this month and updates the status message.
+         */
+        function checkPointsConversionStatus() {
+            const currentMonth = new Date().getMonth();
+            if (currentMonth === lastPointsConversionMonth) {
+                if (conversionStatusMessage) conversionStatusMessage.textContent = getTranslation('conversion_status_converted');
+                if (convertPointsBtn) {
+                    convertPointsBtn.disabled = true;
+                    convertPointsBtn.classList.remove('btn-primary');
+                    convertPointsBtn.classList.add('bg-gray-300', 'text-gray-600', 'cursor-not-allowed');
+                }
+            } else {
+                if (conversionStatusMessage) conversionStatusMessage.textContent = getTranslation('conversion_status_ready');
+                if (convertPointsBtn) {
+                    convertPointsBtn.disabled = false;
+                    convertPointsBtn.classList.remove('bg-gray-300', 'text-gray-600', 'cursor-not-allowed');
+                    convertPointsBtn.classList.add('btn-primary');
+                }
+            }
+        }
+
+
+        // --- Event Listeners and Initialization ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData(); // Load data from localStorage on app start
+            populateLanguageDropdown(); // Populate dropdown
+            setLanguage(currentLang); // Apply loaded or default language
+            updateAllDisplays(); // Update all relevant displays
+            renderSpendingList(); // Render initial spending list
+            renderItemListings(); // Render initial item listings (no filters yet)
+            renderTipsList(); // Render initial tips list
+            // renderBadges() is now called by setLanguage and updateAllDisplays
+            checkAndAwardBadges(); // Check and award badges on load
+            checkPointsConversionStatus(); // Check conversion status on load
+
+            // Set up main navigation
+            navItems.forEach(item => {
+                item.addEventListener('click', (event) => {
+                    showSection(event.currentTarget.dataset.section);
+                });
+            });
+
+            // Show initial section (Home)
+            const initialSection = document.getElementById(currentActiveSection);
+            if (initialSection) {
+                initialSection.classList.remove('hidden');
+                initialSection.classList.add('active');
+                initialSection.style.transform = 'translateX(0)';
+            }
+            // Highlight active nav item for the initial section
+            const initialNavItem = document.querySelector(`.nav-item[data-section="${currentActiveSection}"]`);
+            if (initialNavItem) {
+                initialNavItem.classList.add('bg-red-600');
+            }
+
+
+            // Check for monthly refund prompt after a short delay to ensure UI is ready
+            setTimeout(() => {
+                if (shouldShowMonthlyRefundPrompt()) {
+                    showMonthlyRefundPrompt();
+                }
+            }, 500); // Small delay
+
+            // Event listener for opening the donation modal from Recycle section
+            // This is now on the new Donate tab's button
+            if (openDonationModalBtnDonateTab) {
+                openDonationModalBtnDonateTab.addEventListener('click', showDonationModal);
+            }
+
+
+            // Spending Form Submission
+            if (spendingForm) {
+                spendingForm.addEventListener('submit', (event) => {
+                    event.preventDefault(); // Prevent default form submission
+                    const description = expenseDescriptionInput ? expenseDescriptionInput.value.trim() : '';
+                    const amount = expenseAmountInput ? parseFloat(expenseAmountInput.value) : 0;
+
+                    if (description && !isNaN(amount) && amount > 0) {
+                        spendingRecords.push({
+                            description: description,
+                            amount: amount,
+                            date: new Date().toISOString() // Store date as ISO string
+                        });
+                        saveData();
+                        renderSpendingList();
+                        updateAllDisplays(); // To update total spending for badge check
+                        checkAndAwardBadges(); // Check badges after spending
+                        showMessage(getTranslation('expense_added_success'));
+                        if (expenseDescriptionInput) expenseDescriptionInput.value = ''; // Clear form fields
+                        if (expenseAmountInput) expenseAmountInput.value = '';
+                    } else {
+                        showMessage(getTranslation('invalid_expense_input'));
+                    }
+                });
+            }
+
+            // Item Listing Form Submission
+            if (itemListingForm) {
+                itemListingForm.addEventListener('submit', (event) => {
+                    event.preventDefault();
+
+                    // Check item posting limits
+                    const today = new Date().toDateString();
+                    if (lastItemPostDate !== today) {
+                        itemsPostedToday = 0; // Reset count if it's a new day
+                        lastItemPostDate = today;
+                    }
+
+                    if (itemsPostedToday >= MAX_ITEMS_PER_DAY) {
+                        showMessage(getTranslation('daily_post_limit_reached', { max_items: MAX_ITEMS_PER_DAY }));
+                        return;
+                    }
+
+                    const name = itemNameInput ? itemNameInput.value.trim() : '';
+                    const condition = itemConditionSelect ? itemConditionSelect.value : '';
+                    const type = itemTypeSelect ? itemTypeSelect.value : '';
+                    const description = itemDescriptionInput ? itemDescriptionInput.value.trim() : '';
+                    let price = null;
+                    let lookingFor = null;
+
+                    // Validate price if listing type is 'Sell'
+                    if (type === 'Sell') {
+                        price = itemPriceInput ? parseFloat(itemPriceInput.value) : 0;
+                        if (isNaN(price) || price <= 0) {
+                            showMessage(getTranslation('invalid_price_for_sell'));
+                            return;
+                        }
+                    }
+
+                    // Get 'looking for' if listing type is 'Trade'
+                    if (type === 'Trade') {
+                        lookingFor = itemLookingForInput ? itemLookingForInput.value.trim() : '';
+                        if (!lookingFor) {
+                            showMessage(getTranslation('specify_trade_item'));
+                            return;
+                        }
+                    }
+
+                    // Censorship check for item name and description
+                    if (containsBadWords(name) || containsBadWords(description) || (lookingFor && containsBadWords(lookingFor))) {
+                        showMessage(getTranslation('inappropriate_content_item'));
+                        return;
+                    }
+
+                    if (name && condition && type) {
+                        const newItem = {
+                            id: Date.now().toString(), // Simple unique ID
+                            name: name,
+                            condition: condition,
+                            type: type,
+                            description: description,
+                            price: price, // Store price
+                            lookingFor: lookingFor, // Store lookingFor
+                            date: new Date().toISOString()
+                        };
+                        itemListings.push(newItem);
+                        greenPoints += POINTS_PER_ITEM_LISTED; // Award points for listing
+                        itemsPostedToday++; // Increment post count for daily limit
+                        itemsListedCount++; // Increment badge counter
+                        saveData();
+                        renderItemListings(filterItemType.value, filterItemCondition.value); // Re-render with current filters
+                        updateAllDisplays(); // Will also call checkAndAwardBadges and renderBadges
+                        showMessage(getTranslation('item_listed_success', { item_name: name, points: POINTS_PER_ITEM_LISTED }));
+                        itemListingForm.reset(); // Clear form fields
+                        if (itemPriceGroup) itemPriceGroup.classList.add('hidden'); // Hide price field
+                        if (itemPriceInput) itemPriceInput.value = ''; // Clear price input
+                        if (itemLookingForGroup) itemLookingForGroup.classList.add('hidden'); // Hide looking for field
+                        if (itemLookingForInput) itemLookingForInput.value = ''; // Clear looking for input
+                    } else {
+                        showMessage(getTranslation('fill_all_item_details'));
+                    }
+                });
+            }
+
+            // Show/hide price and looking for inputs based on listing type
+            if (itemTypeSelect) {
+                itemTypeSelect.addEventListener('change', () => {
+                    if (itemPriceGroup) {
+                        itemPriceGroup.classList.add('hidden');
+                        itemPriceInput.removeAttribute('required');
+                        itemPriceInput.value = '';
+                    }
+
+                    if (itemLookingForGroup) {
+                        itemLookingForGroup.classList.add('hidden');
+                        itemLookingForInput.removeAttribute('required');
+                        itemLookingForInput.value = '';
+                    }
+
+
+                    if (itemTypeSelect.value === 'Sell') {
+                        if (itemPriceGroup) itemPriceGroup.classList.remove('hidden');
+                        if (itemPriceInput) itemPriceInput.setAttribute('required', 'required');
+                    } else if (itemTypeSelect.value === 'Trade') {
+                        if (itemLookingForGroup) itemLookingForGroup.classList.remove('hidden');
+                        if (itemLookingForInput) itemLookingForInput.setAttribute('required', 'required');
+                    }
+                });
+            }
+
+            // Recycle Log Form Submission (new)
+            if (recycleLogForm) {
+                recycleLogForm.addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    const recycleType = recycleTypeSelect ? recycleTypeSelect.value : '';
+                    const recycleQuantity = recycleQuantityInput ? parseFloat(recycleQuantityInput.value) : 0;
+
+                    if (recycleType && !isNaN(recycleQuantity) && recycleQuantity > 0) {
+                        // Award points based on quantity, simple example
+                        const pointsEarned = Math.floor(recycleQuantity * POINTS_PER_RECYCLE_ACTIVITY);
+                        greenPoints += pointsEarned;
+                        // For simplicity, we'll also add a small simulated earning to recyclingEarnings
+                        // This keeps the "Donate Earnings" feature functional without direct farming.
+                        recyclingEarnings += (recycleQuantity * 0.1); // Example: $0.10 per unit/kg
+                        recycleLogsCount++; // Increment badge counter
+
+                        saveData();
+                        updateAllDisplays();
+                        checkAndAwardBadges(); // Check badges after recycle log
+                        showMessage(getTranslation('logged_recycle_activity', { quantity: recycleQuantity, type: getTranslation('recycle_type_' + recycleType.toLowerCase()), points: pointsEarned }));
+                        recycleLogForm.reset();
+                    } else {
+                        showMessage(getTranslation('invalid_recycle_input'));
+                    }
+                });
+            }
+
+            // Tip Form Submission
+            if (tipForm) {
+                tipForm.addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    const title = tipTitleInput ? tipTitleInput.value.trim() : '';
+                    const content = tipContentInput ? tipContentInput.value.trim() : '';
+
+                    // Censorship check for tip content
+                    if (containsBadWords(title) || containsBadWords(content)) {
+                        showMessage(getTranslation('inappropriate_content_tip'));
+                        return;
+                    }
+
+                    if (title && content) {
+                        const newTip = {
+                            id: Date.now().toString(), // Simple unique ID
+                            title: title,
+                            content: content,
+                            upvotes: 0,
+                            downvotes: 0,
+                            timestamp: new Date().toISOString() // Add timestamp for sorting
+                        };
+                        savingTips.push(newTip);
+                        tipsSharedCount++; // Increment badge counter
+                        saveData();
+                        renderTipsList();
+                        checkAndAwardBadges(); // Check badges after tip shared
+                        showMessage(getTranslation('tip_shared_success'));
+                        if (tipTitleInput) tipTitleInput.value = '';
+                        if (tipContentInput) tipContentInput.value = '';
+                    } else {
+                        showMessage(getTranslation('fill_all_tip_details'));
+                    }
+                });
+            }
+
+            // Report form submission
+            if (reportForm) {
+                reportForm.addEventListener('submit', submitReport);
+            }
+
+            // Toggle 'Other reason' textarea visibility
+            document.querySelectorAll('input[name="report-reason"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (document.getElementById('report-other') && document.getElementById('report-other').checked) {
+                        if (reportOtherReasonTextarea) {
+                            reportOtherReasonTextarea.classList.remove('hidden');
+                            reportOtherReasonTextarea.setAttribute('required', 'required');
+                        }
+                    } else {
+                        if (reportOtherReasonTextarea) {
+                            reportOtherReasonTextarea.classList.add('hidden');
+                            reportOtherReasonTextarea.removeAttribute('required');
+                            reportOtherReasonTextarea.value = ''; // Clear content when hidden
+                        }
+                    }
+                });
+            });
+
+            // --- Event Listeners for sub-sections and other features ---
+
+            // Exchange sub-section buttons
+            if (exchangeListItemBtn) exchangeListItemBtn.addEventListener('click', () => showExchangeSubSection('list-item-sub-section'));
+            if (exchangeAvailableItemsBtn) exchangeAvailableItemsBtn.addEventListener('click', () => renderItemListings(filterItemType.value, filterItemCondition.value) || showExchangeSubSection('available-items-sub-section'));
+
+            // Exchange filter event listeners
+            if (filterItemType) filterItemType.addEventListener('change', () => renderItemListings(filterItemType.value, filterItemCondition.value));
+            if (filterItemCondition) filterItemCondition.addEventListener('change', () => renderItemListings(filterItemType.value, filterItemCondition.value));
+
+            // Community sub-section buttons
+            if (communityTipsBtn) communityTipsBtn.addEventListener('click', () => showCommunitySubSection('community-tips-sub-section'));
+            if (communityShareTipBtn) communityShareTipBtn.addEventListener('click', () => showCommunitySubSection('share-tip-sub-section'));
+            if (communityChallengesBtn) communityChallengesBtn.addEventListener('click', () => showCommunitySubSection('challenges-sub-section'));
+
+            // Profile buttons
+            if (editProfileBtn) editProfileBtn.addEventListener('click', () => showMessage(getTranslation('edit_profile_coming_soon')));
+            if (settingsBtn) settingsBtn.addEventListener('click', () => showSection('settings-section')); // Now functional
+            if (convertPointsBtn) convertPointsBtn.addEventListener('click', convertPointsToMoney);
+
+            // Community Challenges button (re-added as a simple placeholder)
+            if (viewChallengesBtn) {
+                viewChallengesBtn.addEventListener('click', () => {
+                    showMessage(getTranslation('view_challenges_message'));
+                });
+            }
+
+            // Language selection
+            if (languageSelect) {
+                languageSelect.addEventListener('change', (event) => {
+                    setLanguage(event.target.value);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
